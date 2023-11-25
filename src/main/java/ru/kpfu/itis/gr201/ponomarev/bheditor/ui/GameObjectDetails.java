@@ -15,7 +15,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.Shape;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.IntStringConverter;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.ShapeStringConverter;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
 
@@ -27,8 +26,8 @@ public class GameObjectDetails extends Pane {
     private final Spinner<Integer> startTimeSpinner;
     private final Spinner<Integer> durationSpinner;
     private final ComboBox<Shape> shapeComboBox;
-    private final Spinner<Double> positionXSpinner;
-    private final Spinner<Double> positionYSpinner;
+    private final Label positionXLabel;
+    private final Label positionYLabel;
     private final GridPane gridPane;
 
     private boolean redrawing = false;
@@ -46,7 +45,15 @@ public class GameObjectDetails extends Pane {
     };
 
     public GameObjectDetails(ObjectProperty<HittingObject> objectToDisplay) {
+
         nameField = new TextField();
+        nameField.textProperty().addListener(obs -> {
+            HittingObject obj = displayingObject.get();
+            String val = nameField.getText();
+            if (obj != null && !obj.getName().equals(val)) {
+                obj.setName(val);
+            }
+        });
 
         startTimeSpinner = new Spinner<>(0, Integer.MAX_VALUE, 0, 100);
         startTimeSpinner.setEditable(true);
@@ -79,54 +86,13 @@ public class GameObjectDetails extends Pane {
             }
         });
 
-        positionXSpinner = new Spinner<>(-Double.MAX_VALUE, Double.MAX_VALUE, 0, 10);
-        positionXSpinner.setEditable(true);
-        positionXSpinner.valueProperty().addListener(obs -> {
-            HittingObject obj = displayingObject.get();
-            double val = positionXSpinner.getValue();
-            if (obj != null) {
-                Optional<KeyFrame> optKf = obj.getPositionXKeyFrame(obj.getTime());
-                if (optKf.isPresent()) {
-                    Optional<KeyValue> optKv = optKf.get().getValues().stream().findFirst();
-                    if (optKv.isPresent() && !optKv.get().getEndValue().equals(val)) {
-                        displayingObject.get().addPositionXKeyFrame(
-                                val,
-                                obj.getTime(),
-                                Interpolator.LINEAR // TODO
-                        );
-                    }
-                } else {
-                    displayingObject.get().addPositionXKeyFrame(
-                            val,
-                            obj.getTime(),
-                            Interpolator.LINEAR // TODO
-                    );
-                }
-            }
-        });
+        positionXLabel = makeLabel("0.0");
+        positionXLabel.textProperty().bind(displayingObject.map(HittingObject::getPositionX).map(String::valueOf));
 
-        positionYSpinner = new Spinner<>(-Double.MAX_VALUE, Double.MAX_VALUE, 0, 10);
-        positionYSpinner.setEditable(true);
-        positionYSpinner.getEditor().textProperty().addListener(obs -> {
-            HittingObject obj = displayingObject.get();
-            double val = positionYSpinner.getValue();
-            if (obj != null) {
-                Optional<KeyFrame> optKf = obj.getPositionYKeyFrame(obj.getTime());
-                if (optKf.isPresent()) {
-                    Optional<KeyValue> optKv = optKf.get().getValues().stream().findFirst();
-                    if (optKv.isPresent() && !optKv.get().getEndValue().equals(val)) {
-                        displayingObject.get().addPositionYKeyFrame(
-                                val,
-                                obj.getTime(),
-                                Interpolator.LINEAR // TODO
-                        );
-                    }
-                }
-            }
-        });
+        positionYLabel = makeLabel("0.0");
+        positionYLabel.textProperty().bind(displayingObject.map(HittingObject::getPositionY).map(String::valueOf));
 
         gridPane = new GridPane();
-        gridPane.setPadding(new Insets(20));
         gridPane.setVgap(10);
         gridPane.setHgap(10);
         gridPane.setVisible(false);
@@ -134,7 +100,7 @@ public class GameObjectDetails extends Pane {
         gridPane.addRow(1, makeLabel("Start time"), startTimeSpinner);
         gridPane.addRow(2, makeLabel("Duration"), durationSpinner);
         gridPane.addRow(3, makeLabel("Shape"), shapeComboBox);
-        HBox positionBox = new HBox(10, makeLabel("X"), positionXSpinner, makeLabel("Y"), positionYSpinner);
+        HBox positionBox = new HBox(10, makeLabel("X"), positionXLabel, makeLabel("Y"), positionYLabel);
         positionBox.setAlignment(Pos.CENTER_LEFT);
         gridPane.addRow(4, makeLabel("Position"), positionBox);
 
@@ -167,10 +133,7 @@ public class GameObjectDetails extends Pane {
         nameField.setText(obj.getName());
         startTimeSpinner.getEditor().setText(String.valueOf(obj.getStartTime()));
         durationSpinner.getEditor().setText(String.valueOf(obj.getDuration()));
-        shapeComboBox.getEditor().setText(obj.getShape().getName());
-
-        positionXSpinner.getEditor().setText(String.valueOf(obj.getPositionX()));
-        positionYSpinner.getEditor().setText(String.valueOf(obj.getPositionY()));
+        shapeComboBox.setValue(obj.getShape());
 
         redrawing = false;
     }

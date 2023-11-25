@@ -5,6 +5,8 @@ import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.beans.InvalidationListener;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ObjectPropertyBase;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.layout.*;
@@ -14,6 +16,8 @@ import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.*;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.GameObjectsManager;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
+
+import java.util.Arrays;
 
 public class Main extends Application {
 
@@ -38,7 +42,7 @@ public class Main extends Application {
         timelineControlButtons.setAddTimelineListener(() -> {
             GameObjectsManager.getInstance().addObject(
                     objectsTimeline.getCursorPosition(),
-                    10000
+                    3000
             );
         });
         timelineControlButtons.setPlayPauseListener((playing) -> {
@@ -80,8 +84,33 @@ public class Main extends Application {
         gamePane.heightProperty().addListener(resizeListener);
 
         VBox gameObjectSettingsBox = new VBox();
+        gameObjectSettingsBox.setPrefWidth(400);
+        gameObjectSettingsBox.setPadding(new Insets(20));
+        gameObjectSettingsBox.setBorder(
+                new Border(
+                        new BorderStroke(
+                                null, null, null, Theme.BACKGROUND.brighter(),
+                                null, null, null, BorderStrokeStyle.SOLID,
+                                null, new BorderWidths(0, 0, 0, 2), null
+                        )
+                )
+        );
+
         GameObjectDetails gameObjectDetails = new GameObjectDetails(objectsTimeline.selectedObjectProperty());
-//        HBox.setHgrow(gameObjectDetails, Priority.ALWAYS);
+        VBox.setMargin(gameObjectDetails, new Insets(0, 0, 10, 0));
+
+        ObjectProperty<KeyFrame> selectedKeyFrame = new ObjectPropertyBase<>() {
+            @Override
+            public Object getBean() {
+                return this;
+            }
+
+            @Override
+            public String getName() {
+                return "selectedKeyFrame";
+            }
+        };
+
         KeyFramesTimeline[] kfTimelines = new KeyFramesTimeline[] {
                 new KeyFramesTimeline("PosX", HittingObject.POSITION_X_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty()),
                 new KeyFramesTimeline("PosY", HittingObject.POSITION_Y_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty())
@@ -90,9 +119,35 @@ public class Main extends Application {
             KeyFramesTimeline kft = kfTimelines[i];
             kft.setBackground(Background.fill(Theme.RAINBOW_START_COLOR.deriveColor(i * 50, 1, 1, 1)));
             kft.prefWidthProperty().bind(gameObjectSettingsBox.widthProperty());
+            kft.selectedKeyFrameProperty().addListener(obs -> {
+                if (kft.getSelectedKeyFrame() != null) {
+                    selectedKeyFrame.set(kft.getSelectedKeyFrame());
+                    Arrays.stream(kfTimelines)
+                            .filter(k -> !k.equals(kft))
+                            .forEach(k -> k.setSelectedKeyFrame(null));
+                }
+            });
         }
+        VBox.setMargin(kfTimelines[kfTimelines.length - 1], new Insets(0, 0, 10, 0));
+
+        objectsTimeline.selectedObjectProperty().addListener(obs -> {
+            if (objectsTimeline.getSelectedObject() == null) {
+                selectedKeyFrame.set(null);
+                Arrays.stream(kfTimelines)
+                        .forEach(k -> k.setSelectedKeyFrame(null));
+            }
+        });
+
+        KeyFrameEditor keyFrameEditor = new KeyFrameEditor(selectedKeyFrame, objectsTimeline.selectedObjectProperty());
+        keyFrameEditor.prefWidthProperty().bind(gameObjectSettingsBox.widthProperty());
+        keyFrameEditor.keyFrameProperty().addListener(obs -> {
+            selectedKeyFrame.set(keyFrameEditor.getKeyFrame());
+        });
+        VBox.setMargin(keyFrameEditor, new Insets(0, 0, 10, 0));
+
         gameObjectSettingsBox.getChildren().add(gameObjectDetails);
         gameObjectSettingsBox.getChildren().addAll(kfTimelines);
+        gameObjectSettingsBox.getChildren().add(keyFrameEditor);
 
         root.setCenter(gamePane);
         root.setBottom(timelinePanel);

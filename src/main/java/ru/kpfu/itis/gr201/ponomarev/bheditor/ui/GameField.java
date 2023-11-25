@@ -58,7 +58,7 @@ public class GameField extends Pane {
                         .stream()
                         .filter(ho -> ho.isVisible(getTime()))
                         .map(ho -> {
-                            ho.setTime(getTime());
+                            ho.setTime(getTime() - ho.getStartTime());
                             javafx.scene.shape.Shape shape = null;
                             switch (ho.getShape()) {
                                 case SQUARE -> {
