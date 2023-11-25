@@ -8,4 +8,6 @@ public class Theme {
     public static final Color ACCENT = Color.web("#E384FF");
     public static final Color ON_BACKGROUND = Color.web("#EFD2FF");
     public static final Color GAME_FIELD_BACKGROUND = ON_BACKGROUND;
+
+    public static final Color RAINBOW_START_COLOR = Color.rgb(255, 0, 0, 0.2);
 }

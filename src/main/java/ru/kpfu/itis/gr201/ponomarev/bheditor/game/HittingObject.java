@@ -5,8 +5,11 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.beans.property.*;
+import javafx.beans.value.WritableValue;
 import javafx.collections.ObservableList;
 import javafx.util.Duration;
+
+import java.util.Optional;
 
 public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
@@ -23,6 +26,8 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
     private final IntegerProperty time;
     private final DoubleProperty positionX;
     private final DoubleProperty positionY;
+
+    private boolean changedKeyFrames = false;
 
     public HittingObject(String name, int startTime, int duration, int timelineLayer) {
         this.name = new StringPropertyBase() {
@@ -131,8 +136,6 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
             @Override
             protected void invalidated() {
                 super.invalidated();
-                timeline.playFrom(new Duration(get()));
-                timeline.pause();
                 HittingObject.this.fireValueChangedEvent();
             }
 
@@ -184,50 +187,72 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         };
     }
 
-    public void addPositionXKeyFrame(double value, int time, Interpolator interpolator) {
-        if (
-                timeline.getKeyFrames()
-                    .stream()
-                    .noneMatch(
-                            kf -> kf.getName().startsWith(POSITION_X_KEYFRAME_NAME_PREFIX)
-                                    && kf.getTime().toMillis() == time
-                    )
-        ) {
-            timeline.getKeyFrames().add(
-                    new KeyFrame(
-                            new Duration(time),
-                            POSITION_X_KEYFRAME_NAME_PREFIX + time,
-                            new KeyValue(
-                                    positionX,
-                                    value,
-                                    interpolator
-                            )
-                    )
-            );
+    @Override
+    protected void fireValueChangedEvent() {
+        super.fireValueChangedEvent();
+        if (time != null) {
+            if (changedKeyFrames || getTime() - getStartTime() != timeline.getCurrentTime().toMillis()) {
+                timeline.stop();
+                timeline.playFrom(new Duration(getTime() - getStartTime()));
+                timeline.pause();
+            }
         }
     }
 
-    public void addPositionYKeyFrame(double value, int time, Interpolator interpolator) {
-        if (
-                timeline.getKeyFrames()
-                        .stream()
-                        .noneMatch(
-                                kf -> kf.getName().startsWith(POSITION_Y_KEYFRAME_NAME_PREFIX)
-                                        && kf.getTime().toMillis() == time
+    private Optional<KeyFrame> getKeyFrame(int time, String namePrefix) {
+        return timeline.getKeyFrames()
+                .stream()
+                .filter(
+                        kf -> kf.getName().startsWith(namePrefix)
+                                && kf.getTime().toMillis() == time
+                )
+                .findFirst();
+    }
+
+    private void addKeyFrame(double value, int time, Interpolator interpolator, String namePrefix, WritableValue<Number> property) {
+        getKeyFrame(time, namePrefix).ifPresent(keyFrame -> timeline.getKeyFrames().remove(keyFrame));
+
+        timeline.getKeyFrames().add(
+                new KeyFrame(
+                        new Duration(time),
+                        namePrefix + time,
+                        new KeyValue(
+                                property,
+                                value,
+                                interpolator
                         )
-        ) {
-            timeline.getKeyFrames().add(
-                    new KeyFrame(
-                            new Duration(time),
-                            POSITION_Y_KEYFRAME_NAME_PREFIX + time,
-                            new KeyValue(
-                                    positionY,
-                                    value,
-                                    interpolator
-                            )
-                    )
-            );
-        }
+                )
+        );
+        changedKeyFrames = true;
+        fireValueChangedEvent();
+    }
+
+    public void addPositionXKeyFrame(double value, int time, Interpolator interpolator) {
+        addKeyFrame(
+                value,
+                time,
+                interpolator,
+                POSITION_X_KEYFRAME_NAME_PREFIX,
+                positionX
+        );
+    }
+
+    public Optional<KeyFrame> getPositionXKeyFrame(int time) {
+        return getKeyFrame(time, POSITION_X_KEYFRAME_NAME_PREFIX);
+    }
+
+    public void addPositionYKeyFrame(double value, int time, Interpolator interpolator) {
+        addKeyFrame(
+                value,
+                time,
+                interpolator,
+                POSITION_Y_KEYFRAME_NAME_PREFIX,
+                positionY
+        );
+    }
+
+    public Optional<KeyFrame> getPositionYKeyFrame(int time) {
+        return getKeyFrame(time, POSITION_Y_KEYFRAME_NAME_PREFIX);
     }
 
     public ObservableList<KeyFrame> getKeyFrames() {

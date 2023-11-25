@@ -10,10 +10,8 @@ import javafx.scene.Scene;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.GameField;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.GameObjectDetails;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.TimelineControlButtons;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.ObjectsTimeline;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.*;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.GameObjectsManager;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
 
@@ -81,11 +79,24 @@ public class Main extends Application {
         gamePane.widthProperty().addListener(resizeListener);
         gamePane.heightProperty().addListener(resizeListener);
 
+        VBox gameObjectSettingsBox = new VBox();
         GameObjectDetails gameObjectDetails = new GameObjectDetails(objectsTimeline.selectedObjectProperty());
+//        HBox.setHgrow(gameObjectDetails, Priority.ALWAYS);
+        KeyFramesTimeline[] kfTimelines = new KeyFramesTimeline[] {
+                new KeyFramesTimeline("PosX", HittingObject.POSITION_X_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("PosY", HittingObject.POSITION_Y_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty())
+        };
+        for (int i = 0; i < kfTimelines.length; i++) {
+            KeyFramesTimeline kft = kfTimelines[i];
+            kft.setBackground(Background.fill(Theme.RAINBOW_START_COLOR.deriveColor(i * 50, 1, 1, 1)));
+            kft.prefWidthProperty().bind(gameObjectSettingsBox.widthProperty());
+        }
+        gameObjectSettingsBox.getChildren().add(gameObjectDetails);
+        gameObjectSettingsBox.getChildren().addAll(kfTimelines);
 
         root.setCenter(gamePane);
         root.setBottom(timelinePanel);
-        root.setRight(gameObjectDetails);
+        root.setRight(gameObjectSettingsBox);
 
         root.setBackground(Background.fill(Theme.BACKGROUND));
 
