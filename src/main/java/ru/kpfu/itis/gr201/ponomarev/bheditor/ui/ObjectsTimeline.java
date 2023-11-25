@@ -1,11 +1,9 @@
 package ru.kpfu.itis.gr201.ponomarev.bheditor.ui;
 
 import javafx.beans.InvalidationListener;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.IntegerPropertyBase;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.ObjectPropertyBase;
+import javafx.beans.property.*;
 import javafx.geometry.VPos;
+import javafx.scene.Cursor;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Pane;
@@ -16,20 +14,55 @@ import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
 
 import java.util.*;
 
-public class TimelineNode extends Pane {
+public class ObjectsTimeline extends Pane {
 
     public final static int LAYERS_COUNT = 10;
 
     private final static double TIMELINE_TIME_AXIS_HEIGHT = 30;
     private final static double TIMELINE_LAYER_HEIGHT = 20;
     private final static double TIMELINE_CURSOR_SIZE = 20;
-    private final static int TIMELINE_MILLIS_PER_WIDTH = 60000;
+    private final static int TIMELINE_MILLIS_PER_WIDTH = 5000;
 
     private final Canvas canvas;
 
-    private double visualMillisOffset = 0.0;
-    private double zoom = 1.0;
+    private final IntegerProperty visualMillisOffset = new IntegerPropertyBase() {
+        @Override
+        protected void invalidated() {
+            super.invalidated();
+            redraw();
+        }
+
+        @Override
+        public Object getBean() {
+            return this;
+        }
+
+        @Override
+        public String getName() {
+            return "visualMillisOffset";
+        }
+    };
+    private final DoubleProperty zoom = new DoublePropertyBase() {
+        @Override
+        protected void invalidated() {
+            super.invalidated();
+            redraw();
+        }
+
+        @Override
+        public Object getBean() {
+            return this;
+        }
+
+        @Override
+        public String getName() {
+            return "zoom";
+        }
+    };
     private boolean changingCursorPos = false;
+    private Double objectDragStartX = null;
+    private Integer selectedObjectStartTimeBeforeDrag = null;
+    private Integer selectedObjectDurationBeforeDrag = null;
 
     private final ObjectProperty<HittingObject> selectedObject = new ObjectPropertyBase<>() {
         @Override
@@ -67,7 +100,7 @@ public class TimelineNode extends Pane {
         }
     };
 
-    public TimelineNode() {
+    public ObjectsTimeline() {
         this.canvas = new Canvas();
         this.canvas.widthProperty().bind(widthProperty());
         this.canvas.heightProperty().bind(heightProperty());
@@ -79,35 +112,93 @@ public class TimelineNode extends Pane {
 
         setMinHeight(TIMELINE_LAYER_HEIGHT * LAYERS_COUNT + TIMELINE_TIME_AXIS_HEIGHT);
 
+        visualMillisOffset.set(0);
+        zoom.set(1.0);
+
         setOnMousePressed(event -> {
             if (event.getY() <= TIMELINE_TIME_AXIS_HEIGHT) {
                 changingCursorPos = true;
-                setCursorPosition(pxToMs(event.getX()));
+                setCursorPosition(pxToMs(event.getX()) + visualMillisOffset.get());
             } else {
                 int layer = (int) ((event.getY() - TIMELINE_TIME_AXIS_HEIGHT) / TIMELINE_LAYER_HEIGHT);
-                int time = pxToMs(event.getX());
-                for (HittingObject obj : GameObjectsManager.getInstance().getObjects()) {
-                	if (obj.getTimelineLayer() == layer && (time >= obj.getStartTime() && time <= obj.getEndTime()) && !obj.equals(getSelectedObject())) {
+                int time = pxToMs(event.getX()) + visualMillisOffset.get();
+                boolean prepareDrag = false;
+                boolean prepareScale = false;
+                for (HittingObject obj : GameObjectsManager.getInstance()
+                        .getObjects()
+                        .stream()
+                        .filter(ho -> ho.getTimelineLayer() == layer)
+                        .sorted(Comparator.comparing(HittingObject::getStartTime).reversed())
+                        .toList()) {
+                	if (obj.getTimelineLayer() == layer && (time >= obj.getStartTime() && time <= obj.getEndTime())) {
+                        if (time >= obj.getEndTime() - pxToMs(5)) {
+                            prepareScale = true;
+                            setCursor(Cursor.H_RESIZE);
+                        } else {
+                            prepareDrag = true;
+                        }
                         setSelectedObject(obj);
                         break;
                     }
+                }
+                if (prepareDrag) {
+                    objectDragStartX = event.getX();
+                    selectedObjectStartTimeBeforeDrag = getSelectedObject().getStartTime();
+                } else if (prepareScale) {
+                    objectDragStartX = event.getX();
+                    selectedObjectDurationBeforeDrag = getSelectedObject().getDuration();
+                } else {
+                    setSelectedObject(null);
                 }
             }
         });
         setOnMouseDragged(event -> {
             if (changingCursorPos) {
-                setCursorPosition(pxToMs(event.getX()));
+                setCursorPosition(pxToMs(event.getX()) + visualMillisOffset.get());
+            } else if (objectDragStartX != null) {
+                if (selectedObjectStartTimeBeforeDrag != null) {
+                    selectedObject.get().setStartTime(Math.max(0, selectedObjectStartTimeBeforeDrag + pxToMs(event.getX() - objectDragStartX)));
+                    int layer = (int) ((event.getY() - TIMELINE_TIME_AXIS_HEIGHT) / TIMELINE_LAYER_HEIGHT);
+                    if (selectedObject.get().getTimelineLayer() != layer) {
+                        selectedObject.get().setTimelineLayer(layer);
+                    }
+                } else {
+                    selectedObject.get().setDuration(Math.max(0, selectedObjectDurationBeforeDrag + pxToMs(event.getX() - objectDragStartX)));
+                }
             }
         });
         setOnMouseReleased(event -> {
             changingCursorPos = false;
+            objectDragStartX = null;
+            selectedObjectStartTimeBeforeDrag = null;
+            setCursor(Cursor.DEFAULT);
+        });
+        setOnScroll(event -> {
+            zoom.set(Math.max(0.1, Math.min(10, zoom.getValue() + event.getDeltaY() / event.getMultiplierY() * 0.1)));
+            visualMillisOffset.set(Math.max(0, visualMillisOffset.get() - pxToMs(event.getDeltaX())));
         });
 
-        GameObjectsManager.getInstance().objectsProperty().addListener((InvalidationListener) obs -> redraw());
+        InvalidationListener redrawOnInvalidate = obs1 -> redraw();
+
+        GameObjectsManager.getInstance().objectsProperty().addListener(redrawOnInvalidate);
+
+        selectedObject.addListener((obs, oldV, newV) -> {
+            if (oldV != null) {
+                oldV.removeListener(redrawOnInvalidate);
+            }
+            if (selectedObject.get() != null) {
+                selectedObject.get().addListener(redrawOnInvalidate);
+            }
+            redraw();
+        });
     }
 
     public void redraw() {
-        double millisPerWidth = TIMELINE_MILLIS_PER_WIDTH * zoom;
+        if (getWidth() == 0 || getHeight() == 0) {
+            return;
+        }
+
+        double millisPerWidth = TIMELINE_MILLIS_PER_WIDTH * zoom.get();
 
         GraphicsContext g = canvas.getGraphicsContext2D();
 
@@ -122,10 +213,17 @@ public class TimelineNode extends Pane {
         g.setFill(Theme.ON_BACKGROUND);
         g.setStroke(Theme.BACKGROUND.brighter().brighter());
         g.setLineWidth(1.0);
-        int step = 5000; // TODO: calculate this value
-        for (int i = 0; i <= millisPerWidth; i += step) {
-            g.fillText(String.format("%.1fs", i / 1000.0), msToPx(i), TIMELINE_TIME_AXIS_HEIGHT / 2);
-            g.strokeLine(msToPx(i), TIMELINE_TIME_AXIS_HEIGHT, msToPx(i), getHeight());
+        int step = 500;
+        if (msToPx(step) >= 200) {
+            step /= (int) Math.pow(2, (int) (msToPx(step) / 200) - 1);
+            step = Math.max(63, step);
+        } else {
+            step *= (int) Math.pow(2, (int) (200 / msToPx(step)) - 1);
+            step = Math.min(40000, step);
+        }
+        for (int i = step * (visualMillisOffset.get() / step); i <= millisPerWidth + visualMillisOffset.get(); i += step) {
+            g.fillText(String.format("%.2fs", i / 1000.0), msToPx(i - visualMillisOffset.get()), TIMELINE_TIME_AXIS_HEIGHT / 2);
+            g.strokeLine(msToPx(i - visualMillisOffset.get()), TIMELINE_TIME_AXIS_HEIGHT, msToPx(i - visualMillisOffset.get()), getHeight());
         }
 
         g.setTextBaseline(VPos.CENTER);
@@ -141,7 +239,7 @@ public class TimelineNode extends Pane {
             ) {
             	int start = ho.getStartTime();
                 int end = ho.getEndTime();
-                if (end >= visualMillisOffset && start <= visualMillisOffset + millisPerWidth) {
+                if (end >= visualMillisOffset.get() && start <= visualMillisOffset.get() + millisPerWidth) {
                     if (ho.equals(getSelectedObject())) {
                         g.setFill(Theme.ACCENT);
                         g.setStroke(Theme.ACCENT.darker());
@@ -152,7 +250,7 @@ public class TimelineNode extends Pane {
                         g.setLineWidth(1.0);
                     }
                     g.fillRoundRect(
-                            msToPx((int) (start - visualMillisOffset)),
+                            msToPx(start - visualMillisOffset.get()),
                             TIMELINE_TIME_AXIS_HEIGHT + i * TIMELINE_LAYER_HEIGHT + 1,
                             msToPx(end - start),
                             TIMELINE_LAYER_HEIGHT - 2,
@@ -160,7 +258,7 @@ public class TimelineNode extends Pane {
                             5
                     );
                     g.strokeRoundRect(
-                            msToPx((int) (start - visualMillisOffset)),
+                            msToPx(start - visualMillisOffset.get()),
                             TIMELINE_TIME_AXIS_HEIGHT + i * TIMELINE_LAYER_HEIGHT + 1,
                             msToPx(end - start),
                             TIMELINE_LAYER_HEIGHT - 2,
@@ -171,7 +269,7 @@ public class TimelineNode extends Pane {
                     g.setFill(Theme.BACKGROUND);
                     g.fillText(
                             ho.getName(),
-                            msToPx((int) (start - visualMillisOffset)),
+                            msToPx(start - visualMillisOffset.get()),
                             TIMELINE_TIME_AXIS_HEIGHT + i * TIMELINE_LAYER_HEIGHT + TIMELINE_LAYER_HEIGHT * 0.5,
                             msToPx(end - start)
                     );
@@ -179,7 +277,7 @@ public class TimelineNode extends Pane {
             }
         }
 
-        double cursorPositionOnScreen = msToPx(getCursorPosition());
+        double cursorPositionOnScreen = msToPx(getCursorPosition() - visualMillisOffset.get());
         g.setFill(Theme.PRIMARY);
         g.setStroke(Theme.PRIMARY);
         g.setLineWidth(1.0);
@@ -242,7 +340,7 @@ public class TimelineNode extends Pane {
     }
 
     private double pxPerMs() {
-        double millisPerWidth = TIMELINE_MILLIS_PER_WIDTH * zoom;
+        double millisPerWidth = TIMELINE_MILLIS_PER_WIDTH * zoom.get();
         return getWidth() / millisPerWidth;
     }
 }

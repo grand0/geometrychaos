@@ -5,10 +5,7 @@ import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.beans.InvalidationListener;
-import javafx.beans.binding.Bindings;
-import javafx.beans.binding.NumberBinding;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
@@ -16,7 +13,7 @@ import javafx.util.Duration;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.GameField;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.GameObjectDetails;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.TimelineControlButtons;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.TimelineNode;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.ObjectsTimeline;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.GameObjectsManager;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
 
@@ -29,20 +26,20 @@ public class Main extends Application {
     public void start(Stage primaryStage) {
         BorderPane root = new BorderPane();
 
-        TimelineNode timelineNode = new TimelineNode();
+        ObjectsTimeline objectsTimeline = new ObjectsTimeline();
 
         Timeline cursorPositionTimeline = new Timeline(
                 new KeyFrame(
                         Duration.ZERO,
-                        new KeyValue(timelineNode.cursorPositionProperty(), 0)
+                        new KeyValue(objectsTimeline.cursorPositionProperty(), 0)
                 ),
-                getEndKeyFrame(timelineNode)
+                getEndKeyFrame(objectsTimeline)
         );
 
         TimelineControlButtons timelineControlButtons = new TimelineControlButtons();
         timelineControlButtons.setAddTimelineListener(() -> {
             GameObjectsManager.getInstance().addObject(
-                    timelineNode.getCursorPosition(),
+                    objectsTimeline.getCursorPosition(),
                     10000
             );
         });
@@ -52,39 +49,39 @@ public class Main extends Application {
             } else {
                 cursorPositionTimeline.stop();
                 cursorPositionTimeline.getKeyFrames().remove(1);
-                cursorPositionTimeline.getKeyFrames().add(getEndKeyFrame(timelineNode));
-                cursorPositionTimeline.playFrom(new Duration(timelineNode.getCursorPosition()));
+                cursorPositionTimeline.getKeyFrames().add(getEndKeyFrame(objectsTimeline));
+                cursorPositionTimeline.playFrom(new Duration(objectsTimeline.getCursorPosition()));
             }
         });
         timelineControlButtons.setStopListener(() -> {
             cursorPositionTimeline.stop();
-            timelineNode.setCursorPosition(0);
+            objectsTimeline.setCursorPosition(0);
         });
         cursorPositionTimeline.setOnFinished(event -> timelineControlButtons.setPlaying(false));
 
-        timelineNode.prefWidthProperty().bind(primaryStage.widthProperty());
+        objectsTimeline.prefWidthProperty().bind(primaryStage.widthProperty());
 
-        VBox timelinePanel = new VBox(timelineControlButtons, timelineNode);
+        VBox timelinePanel = new VBox(timelineControlButtons, objectsTimeline);
 
         StackPane gamePane = new StackPane();
         gamePane.setMinSize(0, 0);
-        GameField gameField = new GameField(timelineNode.cursorPositionProperty());
+        GameField gameField = new GameField(objectsTimeline.cursorPositionProperty());
         StackPane.setMargin(gameField, new Insets(20));
         gameField.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         gameField.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         gamePane.getChildren().add(gameField);
         InvalidationListener resizeListener = obs -> {
-            double width = gamePane.getWidth();
-            double height = gamePane.getHeight();
             Insets margin = StackPane.getMargin(gameField);
+            double width = gamePane.getWidth() - margin.getLeft() - margin.getRight();
+            double height = gamePane.getHeight() - margin.getTop() - margin.getBottom();
             double ratio = GameField.FIELD_ASPECT_RATIO;
-            gameField.setPrefWidth(Math.min(width, height * ratio) - margin.getLeft() - margin.getRight());
-            gameField.setPrefHeight(Math.min(width / ratio, height) - margin.getTop() - margin.getBottom());
+            gameField.setPrefWidth(Math.min(width, height * ratio));
+            gameField.setPrefHeight(Math.min(width / ratio, height));
         };
         gamePane.widthProperty().addListener(resizeListener);
         gamePane.heightProperty().addListener(resizeListener);
 
-        GameObjectDetails gameObjectDetails = new GameObjectDetails(timelineNode.selectedObjectProperty());
+        GameObjectDetails gameObjectDetails = new GameObjectDetails(objectsTimeline.selectedObjectProperty());
 
         root.setCenter(gamePane);
         root.setBottom(timelinePanel);
@@ -98,10 +95,10 @@ public class Main extends Application {
         primaryStage.show();
     }
 
-    private static KeyFrame getEndKeyFrame(TimelineNode timelineNode) {
+    private static KeyFrame getEndKeyFrame(ObjectsTimeline objectsTimeline) {
         return new KeyFrame(
-                timelineNode.getTotalDuration(),
-                new KeyValue(timelineNode.cursorPositionProperty(), timelineNode.getTotalDuration().toMillis())
+                objectsTimeline.getTotalDuration(),
+                new KeyValue(objectsTimeline.cursorPositionProperty(), objectsTimeline.getTotalDuration().toMillis())
         );
     }
 

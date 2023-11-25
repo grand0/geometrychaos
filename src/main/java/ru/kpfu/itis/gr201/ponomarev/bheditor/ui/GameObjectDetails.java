@@ -3,14 +3,17 @@ package ru.kpfu.itis.gr201.ponomarev.bheditor.ui;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
 import javafx.collections.FXCollections;
+import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.Shape;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.DoubleStringConverter;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.IntStringConverter;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.ShapeStringConverter;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
 
 public class GameObjectDetails extends Pane {
 
@@ -37,29 +40,32 @@ public class GameObjectDetails extends Pane {
     public GameObjectDetails(ObjectProperty<HittingObject> objectToDisplay) {
         nameField = new TextField();
 
-        startTimeSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, Integer.MAX_VALUE));
+        startTimeSpinner = new Spinner<>(0, Integer.MAX_VALUE, 0, 100);
         startTimeSpinner.setEditable(true);
 
-        durationSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, Integer.MAX_VALUE));
+        durationSpinner = new Spinner<>(0, Integer.MAX_VALUE, 0, 100);
         durationSpinner.setEditable(true);
 
         shapeComboBox = new ComboBox<>();
         shapeComboBox.setItems(FXCollections.observableArrayList(Shape.values()));
         shapeComboBox.setConverter(new ShapeStringConverter());
 
-        positionXSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(-Double.MIN_VALUE, Double.MAX_VALUE));
+        positionXSpinner = new Spinner<>(-Double.MAX_VALUE, Double.MAX_VALUE, 0, 10);
         positionXSpinner.setEditable(true);
 
-        positionYSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(-Double.MIN_VALUE, Double.MAX_VALUE));
+        positionYSpinner = new Spinner<>(-Double.MAX_VALUE, Double.MAX_VALUE, 0, 10);
         positionYSpinner.setEditable(true);
 
         gridPane = new GridPane();
+        gridPane.setPadding(new Insets(20));
+        gridPane.setVgap(10);
+        gridPane.setHgap(10);
         gridPane.setVisible(false);
-        gridPane.addRow(0, new Label("Name"), nameField);
-        gridPane.addRow(1, new Label("Start time"), startTimeSpinner);
-        gridPane.addRow(2, new Label("Duration"), durationSpinner);
-        gridPane.addRow(3, new Label("Shape"), shapeComboBox);
-        gridPane.addRow(4, new Label("Position"), new Label("X"), positionXSpinner, new Label("Y"), positionYSpinner);
+        gridPane.addRow(0, makeLabel("Name"), nameField);
+        gridPane.addRow(1, makeLabel("Start time"), startTimeSpinner);
+        gridPane.addRow(2, makeLabel("Duration"), durationSpinner);
+        gridPane.addRow(3, makeLabel("Shape"), shapeComboBox);
+        gridPane.addRow(4, makeLabel("Position"), new HBox(10, makeLabel("X"), positionXSpinner, makeLabel("Y"), positionYSpinner));
 
         getChildren().add(gridPane);
 
@@ -89,5 +95,11 @@ public class GameObjectDetails extends Pane {
         } else {
             gridPane.setVisible(false);
         }
+    }
+
+    private Label makeLabel(String text) {
+        Label label = new Label(text);
+        label.setTextFill(Theme.ON_BACKGROUND);
+        return label;
     }
 }

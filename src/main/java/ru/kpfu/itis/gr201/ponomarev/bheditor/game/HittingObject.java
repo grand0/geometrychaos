@@ -8,7 +8,7 @@ import javafx.beans.property.*;
 import javafx.collections.ObservableList;
 import javafx.util.Duration;
 
-public class HittingObject {
+public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
     public static final String POSITION_X_KEYFRAME_NAME_PREFIX = "positionX";
     public static final String POSITION_Y_KEYFRAME_NAME_PREFIX = "positionY";
@@ -27,6 +27,12 @@ public class HittingObject {
     public HittingObject(String name, int startTime, int duration, int timelineLayer) {
         this.name = new StringPropertyBase() {
             @Override
+            protected void invalidated() {
+                super.invalidated();
+                HittingObject.this.fireValueChangedEvent();
+            }
+
+            @Override
             public Object getBean() {
                 return this;
             }
@@ -39,6 +45,12 @@ public class HittingObject {
         this.name.set(name);
 
         this.startTime = new IntegerPropertyBase() {
+            @Override
+            protected void invalidated() {
+                super.invalidated();
+                HittingObject.this.fireValueChangedEvent();
+            }
+
             @Override
             public Object getBean() {
                 return this;
@@ -53,6 +65,12 @@ public class HittingObject {
 
         this.duration = new IntegerPropertyBase() {
             @Override
+            protected void invalidated() {
+                super.invalidated();
+                HittingObject.this.fireValueChangedEvent();
+            }
+
+            @Override
             public Object getBean() {
                 return this;
             }
@@ -66,6 +84,12 @@ public class HittingObject {
 
         this.timelineLayer = new IntegerPropertyBase() {
             @Override
+            protected void invalidated() {
+                super.invalidated();
+                HittingObject.this.fireValueChangedEvent();
+            }
+
+            @Override
             public Object getBean() {
                 return this;
             }
@@ -75,6 +99,7 @@ public class HittingObject {
                 return "timelineLayer";
             }
         };
+        this.timelineLayer.set(timelineLayer);
 
         this.timeline = new Timeline(
                 new KeyFrame(
@@ -83,7 +108,13 @@ public class HittingObject {
                 )
         );
 
-        this.shape = new ObjectPropertyBase<Shape>() {
+        this.shape = new ObjectPropertyBase<>() {
+            @Override
+            protected void invalidated() {
+                super.invalidated();
+                HittingObject.this.fireValueChangedEvent();
+            }
+
             @Override
             public Object getBean() {
                 return this;
@@ -102,6 +133,7 @@ public class HittingObject {
                 super.invalidated();
                 timeline.playFrom(new Duration(get()));
                 timeline.pause();
+                HittingObject.this.fireValueChangedEvent();
             }
 
             @Override
@@ -117,6 +149,12 @@ public class HittingObject {
 
         this.positionX = new DoublePropertyBase() {
             @Override
+            protected void invalidated() {
+                super.invalidated();
+                HittingObject.this.fireValueChangedEvent();
+            }
+
+            @Override
             public Object getBean() {
                 return this;
             }
@@ -128,6 +166,12 @@ public class HittingObject {
         };
 
         this.positionY = new DoublePropertyBase() {
+            @Override
+            protected void invalidated() {
+                super.invalidated();
+                HittingObject.this.fireValueChangedEvent();
+            }
+
             @Override
             public Object getBean() {
                 return this;
@@ -194,6 +238,12 @@ public class HittingObject {
         return time >= getStartTime() && time <= getEndTime();
     }
 
+    @Override
+    public Object getBean() {
+        return this;
+    }
+
+    @Override
     public String getName() {
         return name.get();
     }

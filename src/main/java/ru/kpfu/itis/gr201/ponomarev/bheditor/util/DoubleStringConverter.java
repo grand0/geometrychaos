@@ -11,7 +11,7 @@ public class DoubleStringConverter extends StringConverter<Number> {
     @Override
     public Number fromString(String string) {
         try {
-            return Double.parseDouble(string.replaceAll("[^\\d.]", ""));
+            return Double.parseDouble(string.replaceAll("[^\\d.-]", ""));
         } catch (NumberFormatException e) {
             return 0.0;
         }
