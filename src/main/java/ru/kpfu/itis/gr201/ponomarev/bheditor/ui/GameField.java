@@ -70,6 +70,8 @@ public class GameField extends Pane {
                         .map(ho -> {
                             ho.setTime(getTime() - ho.getStartTime());
                             javafx.scene.shape.Shape shape = null;
+                            double shapeCenterOnScreenX = (ho.getPositionX() * scalingFactor) + getWidth() / 2;
+                            double shapeCenterOnScreenY = (ho.getPositionY() * scalingFactor) + getHeight() / 2;
                             switch (ho.getShape()) {
                                 case SQUARE -> {
                                     shape = new Rectangle(
@@ -90,16 +92,13 @@ public class GameField extends Pane {
                                 case TRIANGLE -> {
                                     double height = Math.sqrt(0.75 * shapeSize * shapeSize);
                                     double[] points = new double[] {
-                                            ho.getPositionX()                 + getWidth() / 2, ho.getPositionY() - height * (2.0 / 3.0) + getHeight() / 2,
-                                            ho.getPositionX() + shapeSize / 2 + getWidth() / 2, ho.getPositionY() + height / 3.0         + getHeight() / 2,
-                                            ho.getPositionX() - shapeSize / 2 + getWidth() / 2, ho.getPositionY() + height / 3.0         + getHeight() / 2,
+                                            (ho.getPositionX()                ) * scalingFactor + getWidth() / 2, (ho.getPositionY() - height * (2.0 / 3.0)) * scalingFactor + getHeight() / 2,
+                                            (ho.getPositionX() + shapeSize / 2) * scalingFactor + getWidth() / 2, (ho.getPositionY() + height / 3.0        ) * scalingFactor + getHeight() / 2,
+                                            (ho.getPositionX() - shapeSize / 2) * scalingFactor + getWidth() / 2, (ho.getPositionY() + height / 3.0        ) * scalingFactor + getHeight() / 2,
                                     };
-                                    points = Arrays.stream(points).map(d -> d * scalingFactor).toArray();
                                     shape = new Polygon(points);
                                 }
                             }
-                            double shapeCenterOnScreenX = (ho.getPositionX() * scalingFactor) + getWidth() / 2;
-                            double shapeCenterOnScreenY = (ho.getPositionY() * scalingFactor) + getHeight() / 2;
                             shape.setFill(Theme.PRIMARY);
                             shape.getTransforms().addAll(
                                     new Rotate(ho.getRotation(), shapeCenterOnScreenX + ho.getPivotX(), shapeCenterOnScreenY + ho.getPivotY()),
