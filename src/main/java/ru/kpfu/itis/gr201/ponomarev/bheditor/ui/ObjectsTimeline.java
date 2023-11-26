@@ -1,7 +1,6 @@
 package ru.kpfu.itis.gr201.ponomarev.bheditor.ui;
 
 import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.*;
 import javafx.geometry.VPos;
@@ -16,7 +15,7 @@ import ru.kpfu.itis.gr201.ponomarev.bheditor.util.GameObjectsManager;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Interpolators;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
 
-import java.util.*;
+import java.util.Comparator;
 
 public class ObjectsTimeline extends Pane {
 

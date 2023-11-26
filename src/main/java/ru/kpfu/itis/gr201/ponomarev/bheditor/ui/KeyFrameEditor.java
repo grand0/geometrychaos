@@ -61,15 +61,12 @@ public class KeyFrameEditor extends Pane {
         timeSpinner.valueProperty().addListener(obs -> {
             KeyFrame kf = keyFrame.get();
             if (kf != null) {
-                KeyValue kv = kf.getValues().stream().findFirst().orElse(null);
-                if (kv != null) {
-                    changeKeyFrame(
-                            selectedKeyFrame,
-                            (double) kv.getEndValue(),
-                            timeSpinner.getValue(),
-                            Interpolators.byInterpolator(kv.getInterpolator())
-                    );
-                }
+                kf.getValues().stream().findFirst().ifPresent(kv -> changeKeyFrame(
+                        selectedKeyFrame,
+                        (double) kv.getEndValue(),
+                        timeSpinner.getValue(),
+                        Interpolators.byInterpolator(kv.getInterpolator())
+                ));
             }
         });
 
@@ -97,15 +94,12 @@ public class KeyFrameEditor extends Pane {
         interpolatorComboBox.valueProperty().addListener(obs -> {
             KeyFrame kf = keyFrame.get();
             if (kf != null) {
-                KeyValue kv = kf.getValues().stream().findFirst().orElse(null);
-                if (kv != null) {
-                    changeKeyFrame(
-                            selectedKeyFrame,
-                            (Double) kv.getEndValue(),
-                            (int) kf.getTime().toMillis(),
-                            interpolatorComboBox.getValue()
-                    );
-                }
+                kf.getValues().stream().findFirst().ifPresent(kv -> changeKeyFrame(
+                        selectedKeyFrame,
+                        (Double) kv.getEndValue(),
+                        (int) kf.getTime().toMillis(),
+                        interpolatorComboBox.getValue()
+                ));
             }
         });
 
@@ -151,10 +145,10 @@ public class KeyFrameEditor extends Pane {
 
         timeSpinner.getEditor().setText(String.valueOf((int) keyFrame.get().getTime().toMillis()));
 
-        KeyValue kv = keyFrame.get().getValues().stream().findFirst().get();
-        valueSpinner.getEditor().setText(String.valueOf((double) kv.getEndValue()));
-
-        interpolatorComboBox.setValue(Interpolators.byInterpolator(kv.getInterpolator()));
+        keyFrame.get().getValues().stream().findFirst().ifPresent(kv -> {
+            valueSpinner.getEditor().setText(String.valueOf((double) kv.getEndValue()));
+            interpolatorComboBox.setValue(Interpolators.byInterpolator(kv.getInterpolator()));
+        });
     }
 
     private Label makeLabel(String text) {

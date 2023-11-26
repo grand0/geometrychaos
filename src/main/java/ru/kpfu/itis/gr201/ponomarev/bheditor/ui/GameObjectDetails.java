@@ -1,24 +1,19 @@
 package ru.kpfu.itis.gr201.ponomarev.bheditor.ui;
 
-import javafx.animation.Interpolator;
-import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
 import javafx.collections.FXCollections;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.control.*;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.Shape;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.ShapeStringConverter;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
-
-import java.util.Optional;
 
 public class GameObjectDetails extends Pane {
 
@@ -26,11 +21,7 @@ public class GameObjectDetails extends Pane {
     private final Spinner<Integer> startTimeSpinner;
     private final Spinner<Integer> durationSpinner;
     private final ComboBox<Shape> shapeComboBox;
-    private final Label positionXLabel;
-    private final Label positionYLabel;
     private final GridPane gridPane;
-
-    private boolean redrawing = false;
 
     private final ObjectProperty<HittingObject> displayingObject = new ObjectPropertyBase<>() {
         @Override
@@ -86,12 +77,6 @@ public class GameObjectDetails extends Pane {
             }
         });
 
-        positionXLabel = makeLabel("0.0");
-        positionXLabel.textProperty().bind(displayingObject.map(HittingObject::getPositionX).map(String::valueOf));
-
-        positionYLabel = makeLabel("0.0");
-        positionYLabel.textProperty().bind(displayingObject.map(HittingObject::getPositionY).map(String::valueOf));
-
         gridPane = new GridPane();
         gridPane.setVgap(10);
         gridPane.setHgap(10);
@@ -100,9 +85,6 @@ public class GameObjectDetails extends Pane {
         gridPane.addRow(1, makeLabel("Start time"), startTimeSpinner);
         gridPane.addRow(2, makeLabel("Duration"), durationSpinner);
         gridPane.addRow(3, makeLabel("Shape"), shapeComboBox);
-        HBox positionBox = new HBox(10, makeLabel("X"), positionXLabel, makeLabel("Y"), positionYLabel);
-        positionBox.setAlignment(Pos.CENTER_LEFT);
-        gridPane.addRow(4, makeLabel("Position"), positionBox);
 
         getChildren().add(gridPane);
 
@@ -127,15 +109,12 @@ public class GameObjectDetails extends Pane {
             return;
         }
 
-        redrawing = true;
         gridPane.setVisible(true);
 
         nameField.setText(obj.getName());
         startTimeSpinner.getEditor().setText(String.valueOf(obj.getStartTime()));
         durationSpinner.getEditor().setText(String.valueOf(obj.getDuration()));
         shapeComboBox.setValue(obj.getShape());
-
-        redrawing = false;
     }
 
     private Label makeLabel(String text) {

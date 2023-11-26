@@ -7,7 +7,6 @@ import javafx.beans.property.*;
 import javafx.beans.value.WritableValue;
 import javafx.collections.ObservableList;
 import javafx.util.Duration;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.KeyFramesTimeline;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.ObjectsTimeline;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Interpolators;
 

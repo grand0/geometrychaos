@@ -14,8 +14,6 @@ import ru.kpfu.itis.gr201.ponomarev.bheditor.game.Shape;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.GameObjectsManager;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
 
-import java.util.Arrays;
-
 public class GameField extends Pane {
 
     public static final double FIELD_WIDTH = 1280;
