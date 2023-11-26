@@ -35,7 +35,7 @@ public class GameObjectDetails extends Pane {
     private final ObjectProperty<HittingObject> displayingObject = new ObjectPropertyBase<>() {
         @Override
         public Object getBean() {
-            return this;
+            return null;
         }
 
         @Override

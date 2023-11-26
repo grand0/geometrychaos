@@ -103,7 +103,7 @@ public class Main extends Application {
         ObjectProperty<KeyFrame> selectedKeyFrame = new ObjectPropertyBase<>() {
             @Override
             public Object getBean() {
-                return this;
+                return null;
             }
 
             @Override

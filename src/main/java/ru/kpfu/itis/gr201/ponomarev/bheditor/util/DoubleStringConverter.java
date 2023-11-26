@@ -2,14 +2,14 @@ package ru.kpfu.itis.gr201.ponomarev.bheditor.util;
 
 import javafx.util.StringConverter;
 
-public class DoubleStringConverter extends StringConverter<Number> {
+public class DoubleStringConverter extends StringConverter<Double> {
     @Override
-    public String toString(Number object) {
+    public String toString(Double object) {
         return object.toString();
     }
 
     @Override
-    public Number fromString(String string) {
+    public Double fromString(String string) {
         try {
             return Double.parseDouble(string.replaceAll("[^\\d.-]", ""));
         } catch (NumberFormatException e) {

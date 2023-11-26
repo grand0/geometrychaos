@@ -43,7 +43,7 @@ public class KeyFramesTimeline extends Pane {
         this.currentObject = new ObjectPropertyBase<>() {
             @Override
             public Object getBean() {
-                return this;
+                return null;
             }
 
             @Override
@@ -66,7 +66,7 @@ public class KeyFramesTimeline extends Pane {
         selectedKeyFrame = new ObjectPropertyBase<>() {
             @Override
             public Object getBean() {
-                return this;
+                return null;
             }
 
             @Override

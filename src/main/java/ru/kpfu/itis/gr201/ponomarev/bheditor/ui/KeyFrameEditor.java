@@ -8,9 +8,11 @@ import javafx.collections.FXCollections;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.DoubleStringConverter;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Interpolators;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.InterpolatorsStringConverter;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
@@ -28,7 +30,7 @@ public class KeyFrameEditor extends Pane {
         kfParent = new ObjectPropertyBase<>() {
             @Override
             public Object getBean() {
-                return this;
+                return null;
             }
 
             @Override
@@ -41,7 +43,7 @@ public class KeyFrameEditor extends Pane {
         keyFrame = new ObjectPropertyBase<>() {
             @Override
             public Object getBean() {
-                return this;
+                return null;
             }
 
             @Override
@@ -71,20 +73,21 @@ public class KeyFrameEditor extends Pane {
             }
         });
 
-        valueSpinner = new Spinner<>(-Double.MAX_VALUE, Double.MAX_VALUE, 0);
+        SpinnerValueFactory.DoubleSpinnerValueFactory valueFactory = new SpinnerValueFactory.DoubleSpinnerValueFactory(
+                -Double.MAX_VALUE, Double.MAX_VALUE, 0.0
+        );
+        valueFactory.setConverter(new DoubleStringConverter());
+        valueSpinner = new Spinner<>(valueFactory);
         valueSpinner.setEditable(true);
         valueSpinner.valueProperty().addListener(obs -> {
             KeyFrame kf = keyFrame.get();
             if (kf != null) {
-                KeyValue kv = kf.getValues().stream().findFirst().orElse(null);
-                if (kv != null) {
-                    changeKeyFrame(
-                            selectedKeyFrame,
-                            valueSpinner.getValue(),
-                            (int) kf.getTime().toMillis(),
-                            Interpolators.byInterpolator(kv.getInterpolator())
-                    );
-                }
+                kf.getValues().stream().findFirst().ifPresent(kv -> changeKeyFrame(
+                        selectedKeyFrame,
+                        valueSpinner.getValue(),
+                        (int) kf.getTime().toMillis(),
+                        Interpolators.byInterpolator(kv.getInterpolator())
+                ));
             }
         });
 

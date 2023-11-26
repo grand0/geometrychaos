@@ -1,6 +1,7 @@
 package ru.kpfu.itis.gr201.ponomarev.bheditor.ui;
 
 import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.*;
 import javafx.geometry.VPos;
@@ -12,6 +13,7 @@ import javafx.scene.layout.Pane;
 import javafx.util.Duration;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.GameObjectsManager;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Interpolators;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
 
 import java.util.*;
@@ -36,7 +38,7 @@ public class ObjectsTimeline extends Pane {
 
         @Override
         public Object getBean() {
-            return this;
+            return null;
         }
 
         @Override
@@ -53,7 +55,7 @@ public class ObjectsTimeline extends Pane {
 
         @Override
         public Object getBean() {
-            return this;
+            return null;
         }
 
         @Override
@@ -75,7 +77,7 @@ public class ObjectsTimeline extends Pane {
 
         @Override
         public Object getBean() {
-            return this;
+            return null;
         }
 
         @Override
@@ -93,7 +95,7 @@ public class ObjectsTimeline extends Pane {
 
         @Override
         public Object getBean() {
-            return this;
+            return null;
         }
 
         @Override
@@ -193,10 +195,16 @@ public class ObjectsTimeline extends Pane {
                         getSelectedObject().getTimelineLayer() == LAYERS_COUNT - 1 ? 0 : getSelectedObject().getTimelineLayer() + 1
                 );
                 for (KeyFrame kf : getSelectedObject().getKeyFrames()) {
-                    copy.addKeyFrame(kf);
+                    kf.getValues().stream().findFirst().ifPresent(kv -> {
+                        copy.addKeyFrame(
+                                (double) kv.getEndValue(),
+                                (int) kf.getTime().toMillis(),
+                                Interpolators.byInterpolator(kv.getInterpolator()),
+                                HittingObject.getPrefixFromKeyFrameName(kf.getName())
+                        );
+                    });
                 }
                 copy.setShape(getSelectedObject().getShape());
-//                copy.setTime(getSelectedObject().getTime());
                 GameObjectsManager.getInstance().addObject(copy);
                 setSelectedObject(copy);
             }

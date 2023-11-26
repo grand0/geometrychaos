@@ -7,9 +7,12 @@ import javafx.beans.property.*;
 import javafx.beans.value.WritableValue;
 import javafx.collections.ObservableList;
 import javafx.util.Duration;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.KeyFramesTimeline;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.ObjectsTimeline;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Interpolators;
 
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
 
 public class HittingObject extends ObjectPropertyBase<HittingObject> {
@@ -50,7 +53,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
             @Override
             public Object getBean() {
-                return this;
+                return null;
             }
 
             @Override
@@ -69,7 +72,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
             @Override
             public Object getBean() {
-                return this;
+                return null;
             }
 
             @Override
@@ -88,7 +91,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
             @Override
             public Object getBean() {
-                return this;
+                return null;
             }
 
             @Override
@@ -107,7 +110,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
             @Override
             public Object getBean() {
-                return this;
+                return null;
             }
 
             @Override
@@ -117,12 +120,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         };
         this.timelineLayer.set(timelineLayer);
 
-        this.timeline = new Timeline(
-                new KeyFrame(
-                        new Duration(duration),
-                        "end"
-                )
-        );
+        this.timeline = new Timeline();
 
         this.shape = new ObjectPropertyBase<>() {
             @Override
@@ -133,7 +131,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
             @Override
             public Object getBean() {
-                return this;
+                return null;
             }
 
             @Override
@@ -152,7 +150,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
             @Override
             public Object getBean() {
-                return this;
+                return null;
             }
 
             @Override
@@ -193,7 +191,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
             @Override
             public Object getBean() {
-                return this;
+                return null;
             }
 
             @Override
@@ -316,6 +314,10 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         fireValueChangedEvent();
     }
 
+    public static String getPrefixFromKeyFrameName(String name) {
+        return name.replaceAll("\\d", "");
+    }
+
     public ObservableList<KeyFrame> getKeyFrames() {
         return timeline.getKeyFrames();
     }
@@ -326,7 +328,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
     @Override
     public Object getBean() {
-        return this;
+        return null;
     }
 
     @Override
@@ -498,5 +500,38 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
     public void setPivotY(double pivotY) {
         this.pivotY.set(pivotY);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HittingObject that = (HittingObject) o;
+        return changedKeyFrames == that.changedKeyFrames && Objects.equals(getName(), that.getName()) && Objects.equals(getStartTime(), that.getStartTime()) && Objects.equals(getDuration(), that.getDuration()) && Objects.equals(getTimelineLayer(), that.getTimelineLayer()) && Objects.equals(getTimeline(), that.getTimeline()) && Objects.equals(getShape(), that.getShape()) && Objects.equals(getTime(), that.getTime()) && Objects.equals(getPositionX(), that.getPositionX()) && Objects.equals(getPositionY(), that.getPositionY()) && Objects.equals(getScaleX(), that.getScaleX()) && Objects.equals(getScaleY(), that.getScaleY()) && Objects.equals(getRotation(), that.getRotation()) && Objects.equals(getPivotX(), that.getPivotX()) && Objects.equals(getPivotY(), that.getPivotY());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getName(), getStartTime(), getDuration(), getTimelineLayer(), getTimeline(), getShape(), getTime(), getPositionX(), getPositionY(), getScaleX(), getScaleY(), getRotation(), getPivotX(), getPivotY(), changedKeyFrames);
+    }
+
+    @Override
+    public String toString() {
+        return "HittingObject{" +
+                "name=" + getName() +
+                ", startTime=" + getStartTime() +
+                ", duration=" + getDuration() +
+                ", timelineLayer=" + getTimelineLayer() +
+                ", timeline=" + Arrays.toString(getTimeline().getKeyFrames().toArray()) +
+                ", shape=" + getShape() +
+                ", time=" + getTime() +
+                ", positionX=" + getPositionX() +
+                ", positionY=" + getPositionY() +
+                ", scaleX=" + getScaleX() +
+                ", scaleY=" + getScaleY() +
+                ", rotation=" + getRotation() +
+                ", pivotX=" + getPivotX() +
+                ", pivotY=" + getPivotY() +
+                '}';
     }
 }

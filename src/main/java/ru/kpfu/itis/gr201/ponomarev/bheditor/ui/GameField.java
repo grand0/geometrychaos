@@ -22,16 +22,20 @@ public class GameField extends Pane {
     public static final double FIELD_HEIGHT = 720;
     public static final double FIELD_ASPECT_RATIO = FIELD_WIDTH / FIELD_HEIGHT;
 
+    private boolean listenToObjectsChanges = true;
+
     private final IntegerProperty time = new IntegerPropertyBase() {
         @Override
         protected void invalidated() {
             super.invalidated();
+            listenToObjectsChanges = false;
             redraw();
+            listenToObjectsChanges = true;
         }
 
         @Override
         public Object getBean() {
-            return this;
+            return null;
         }
 
         @Override
@@ -42,7 +46,11 @@ public class GameField extends Pane {
 
     public GameField(IntegerProperty timelineCursorPosition) {
         time.bind(timelineCursorPosition);
-        GameObjectsManager.getInstance().objectsProperty().addListener((InvalidationListener) obs -> redraw());
+        GameObjectsManager.getInstance().objectsProperty().addListener((InvalidationListener) obs -> {
+            if (listenToObjectsChanges) {
+                redraw();
+            }
+        });
         widthProperty().addListener(obs -> redraw());
         heightProperty().addListener(obs -> redraw());
 
