@@ -8,6 +8,8 @@ import javafx.scene.layout.Pane;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Scale;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.Shape;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.GameObjectsManager;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
@@ -63,16 +65,16 @@ public class GameField extends Pane {
                             switch (ho.getShape()) {
                                 case SQUARE -> {
                                     shape = new Rectangle(
-                                            (ho.getPositionX() - shapeSize / 2) * scalingFactor,
-                                            (ho.getPositionY() - shapeSize / 2) * scalingFactor,
+                                            ((ho.getPositionX() - shapeSize / 2) * scalingFactor) + getWidth() / 2,
+                                            ((ho.getPositionY() - shapeSize / 2) * scalingFactor) + getHeight() / 2,
                                             shapeSize * scalingFactor,
                                             shapeSize * scalingFactor
                                     );
                                 }
                                 case CIRCLE -> {
                                     shape = new Ellipse(
-                                            ho.getPositionX() * scalingFactor,
-                                            ho.getPositionY() * scalingFactor,
+                                            (ho.getPositionX() * scalingFactor) + getWidth() / 2,
+                                            (ho.getPositionY() * scalingFactor) + getHeight() / 2,
                                             (shapeSize / 2) * scalingFactor,
                                             (shapeSize / 2) * scalingFactor
                                     );
@@ -80,15 +82,21 @@ public class GameField extends Pane {
                                 case TRIANGLE -> {
                                     double height = Math.sqrt(0.75 * shapeSize * shapeSize);
                                     double[] points = new double[] {
-                                            ho.getPositionX()                , ho.getPositionY() - height / 2,
-                                            ho.getPositionX() + shapeSize / 2, ho.getPositionY() + height / 2,
-                                            ho.getPositionX() - shapeSize / 2, ho.getPositionY() + height / 2,
+                                            ho.getPositionX()                 + getWidth() / 2, ho.getPositionY() - height * (2.0 / 3.0) + getHeight() / 2,
+                                            ho.getPositionX() + shapeSize / 2 + getWidth() / 2, ho.getPositionY() + height / 3.0         + getHeight() / 2,
+                                            ho.getPositionX() - shapeSize / 2 + getWidth() / 2, ho.getPositionY() + height / 3.0         + getHeight() / 2,
                                     };
                                     points = Arrays.stream(points).map(d -> d * scalingFactor).toArray();
                                     shape = new Polygon(points);
                                 }
                             }
+                            double shapeCenterOnScreenX = (ho.getPositionX() * scalingFactor) + getWidth() / 2;
+                            double shapeCenterOnScreenY = (ho.getPositionY() * scalingFactor) + getHeight() / 2;
                             shape.setFill(Theme.PRIMARY);
+                            shape.getTransforms().addAll(
+                                    new Rotate(ho.getRotation(), shapeCenterOnScreenX + ho.getPivotX(), shapeCenterOnScreenY + ho.getPivotY()),
+                                    new Scale(ho.getScaleX(), ho.getScaleY(), shapeCenterOnScreenX + ho.getPivotX(), shapeCenterOnScreenY + ho.getPivotY())
+                            );
                             return shape;
                         })
                         .toList()

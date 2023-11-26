@@ -1,6 +1,5 @@
 package ru.kpfu.itis.gr201.ponomarev.bheditor.ui;
 
-import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.ObjectProperty;
@@ -8,6 +7,7 @@ import javafx.beans.property.ObjectPropertyBase;
 import javafx.geometry.VPos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
@@ -20,8 +20,10 @@ import java.util.List;
 public class KeyFramesTimeline extends Pane {
 
     private final static double TIMELINE_HEIGHT = 20;
-    private final static double ADD_KEYFRAME_BUTTON_SIZE = TIMELINE_HEIGHT;
     private final static double KEYFRAME_SIZE = 6;
+    private final static double SELECTED_KEYFRAME_SIZE = 8;
+    private final static double TIMELINE_HORIZONTAL_GAP = KEYFRAME_SIZE / 2;
+    private final static double ADD_KEYFRAME_BUTTON_SIZE = TIMELINE_HEIGHT;
 
     private final Canvas canvas;
 
@@ -31,6 +33,8 @@ public class KeyFramesTimeline extends Pane {
     private final ObjectProperty<KeyFrame> selectedKeyFrame;
 
     private boolean hoveringAddButton = false;
+
+    private boolean lostKeyFrameFocus = false;
 
     public KeyFramesTimeline(String name, String keyFrameNamePrefix, ObjectProperty<HittingObject> currentObject) {
         this.name = name;
@@ -82,15 +86,18 @@ public class KeyFramesTimeline extends Pane {
         setMinHeight(TIMELINE_HEIGHT);
         setVisible(false);
 
-        canvas.setOnMouseMoved(event -> {
+        setOnMousePressed(event -> {
+            requestFocus();
+        });
+        setOnMouseMoved(event -> {
             hoveringAddButton = event.getX() >= 0 && event.getX() <= ADD_KEYFRAME_BUTTON_SIZE;
             redraw(true);
         });
-        canvas.setOnMouseExited(event -> {
+        setOnMouseExited(event -> {
             hoveringAddButton = false;
             redraw(true);
         });
-        canvas.setOnMouseClicked(event -> {
+        setOnMouseClicked(event -> {
             if (hoveringAddButton && currentObject.get() != null) {
                 currentObject.get().addKeyFrame(
                         0,
@@ -99,13 +106,27 @@ public class KeyFramesTimeline extends Pane {
                         keyFrameNamePrefix
                 );
             } else {
+                boolean selected = false;
                 for (KeyFrame kf : getKeyFrames()) {
-                    double centerX = msToPx((int) kf.getTime().toMillis()) + ADD_KEYFRAME_BUTTON_SIZE;
+                    double centerX = msToPx((int) kf.getTime().toMillis()) + ADD_KEYFRAME_BUTTON_SIZE + TIMELINE_HORIZONTAL_GAP;
                     if (event.getX() >= centerX - KEYFRAME_SIZE / 2 && event.getX() <= centerX + KEYFRAME_SIZE / 2) {
+                        setLostKeyFrameFocus(false);
                         setSelectedKeyFrame(kf);
+                        selected = true;
                         break;
                     }
                 }
+                if (!selected) {
+                    setLostKeyFrameFocus(true);
+                    setSelectedKeyFrame(null);
+                }
+            }
+        });
+        setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.DELETE && getCurrentObject() != null && getSelectedKeyFrame() != null) {
+                getCurrentObject().removeKeyFrame(getSelectedKeyFrame());
+                setLostKeyFrameFocus(true);
+                setSelectedKeyFrame(null);
             }
         });
     }
@@ -122,23 +143,40 @@ public class KeyFramesTimeline extends Pane {
         if (!onlyAddButton) {
             g.clearRect(0, 0, getWidth(), getHeight());
 
+            g.setStroke(Theme.BACKGROUND.brighter());
+            g.setLineWidth(1.0);
+            g.strokeLine(
+                    ADD_KEYFRAME_BUTTON_SIZE + TIMELINE_HORIZONTAL_GAP,
+                    0,
+                    ADD_KEYFRAME_BUTTON_SIZE + TIMELINE_HORIZONTAL_GAP,
+                    TIMELINE_HEIGHT
+            );
+            g.strokeLine(
+                    getWidth() - TIMELINE_HORIZONTAL_GAP,
+                    0,
+                    getWidth() - TIMELINE_HORIZONTAL_GAP,
+                    TIMELINE_HEIGHT
+            );
+
             g.setTextBaseline(VPos.CENTER);
             g.setTextAlign(TextAlignment.RIGHT);
             g.setFill(Theme.ON_BACKGROUND.deriveColor(0, 1, 1, 0.3));
-            g.setFont(Font.font(20));
-            g.fillText(name, getWidth() - 5, TIMELINE_HEIGHT / 2);
+            g.setFont(Font.font(16));
+            g.fillText(name, getWidth() - 10, TIMELINE_HEIGHT / 2);
 
             for (KeyFrame kf : getKeyFrames()) {
+                double kfSize = KEYFRAME_SIZE;
                 if (getSelectedKeyFrame() != null && kf.equals(getSelectedKeyFrame())) {
                     g.setFill(Theme.ACCENT);
+                    kfSize = SELECTED_KEYFRAME_SIZE;
                 } else {
                     g.setFill(Theme.PRIMARY);
                 }
-                double centerX = msToPx((int) kf.getTime().toMillis()) + ADD_KEYFRAME_BUTTON_SIZE;
-                g.fillOval(centerX - KEYFRAME_SIZE / 2, TIMELINE_HEIGHT / 2 - KEYFRAME_SIZE / 2, KEYFRAME_SIZE, KEYFRAME_SIZE);
+                double centerX = msToPx((int) kf.getTime().toMillis()) + ADD_KEYFRAME_BUTTON_SIZE + TIMELINE_HORIZONTAL_GAP;
+                g.fillOval(centerX - kfSize / 2, TIMELINE_HEIGHT / 2 - kfSize / 2, kfSize, kfSize);
             }
 
-            double cursorPositionOnScreen = msToPx(currentObject.get().getTime()) + ADD_KEYFRAME_BUTTON_SIZE;
+            double cursorPositionOnScreen = msToPx(currentObject.get().getTime()) + ADD_KEYFRAME_BUTTON_SIZE + TIMELINE_HORIZONTAL_GAP;
             g.setStroke(Theme.PRIMARY);
             g.setLineWidth(1.0);
             g.strokeLine(
@@ -211,6 +249,14 @@ public class KeyFramesTimeline extends Pane {
     }
 
     private double getTimelineWidth() {
-        return getWidth() - ADD_KEYFRAME_BUTTON_SIZE;
+        return getWidth() - ADD_KEYFRAME_BUTTON_SIZE - TIMELINE_HORIZONTAL_GAP * 2;
+    }
+
+    public boolean isLostKeyFrameFocus() {
+        return lostKeyFrameFocus;
+    }
+
+    public void setLostKeyFrameFocus(boolean lostKeyFrameFocus) {
+        this.lostKeyFrameFocus = lostKeyFrameFocus;
     }
 }

@@ -1,11 +1,13 @@
 package ru.kpfu.itis.gr201.ponomarev.bheditor.ui;
 
+import javafx.animation.KeyFrame;
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.*;
 import javafx.geometry.VPos;
 import javafx.scene.Cursor;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.util.Duration;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
@@ -116,6 +118,8 @@ public class ObjectsTimeline extends Pane {
         zoom.set(1.0);
 
         setOnMousePressed(event -> {
+            requestFocus();
+
             if (event.getY() <= TIMELINE_TIME_AXIS_HEIGHT) {
                 changingCursorPos = true;
                 setCursorPosition(pxToMs(event.getX()) + visualMillisOffset.get());
@@ -176,6 +180,26 @@ public class ObjectsTimeline extends Pane {
         setOnScroll(event -> {
             zoom.set(Math.max(0.1, Math.min(10, zoom.getValue() + event.getDeltaY() / event.getMultiplierY() * 0.1)));
             visualMillisOffset.set(Math.max(0, visualMillisOffset.get() - pxToMs(event.getDeltaX())));
+        });
+        setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.DELETE && getSelectedObject() != null) {
+                GameObjectsManager.getInstance().removeObject(getSelectedObject());
+                setSelectedObject(null);
+            } else if (event.getCode() == KeyCode.D && event.isControlDown() && getSelectedObject() != null) {
+                HittingObject copy = new HittingObject(
+                        getSelectedObject().getName(),
+                        getSelectedObject().getStartTime(),
+                        getSelectedObject().getDuration(),
+                        getSelectedObject().getTimelineLayer() == LAYERS_COUNT - 1 ? 0 : getSelectedObject().getTimelineLayer() + 1
+                );
+                for (KeyFrame kf : getSelectedObject().getKeyFrames()) {
+                    copy.addKeyFrame(kf);
+                }
+                copy.setShape(getSelectedObject().getShape());
+//                copy.setTime(getSelectedObject().getTime());
+                GameObjectsManager.getInstance().addObject(copy);
+                setSelectedObject(copy);
+            }
         });
 
         InvalidationListener redrawOnInvalidate = obs1 -> redraw();
@@ -316,6 +340,7 @@ public class ObjectsTimeline extends Pane {
     }
 
     public void setCursorPosition(int cursorPosition) {
+        if (cursorPosition < 0) cursorPosition = 0;
         this.cursorPosition.set(cursorPosition);
     }
 

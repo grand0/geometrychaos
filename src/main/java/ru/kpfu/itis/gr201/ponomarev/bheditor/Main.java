@@ -85,6 +85,7 @@ public class Main extends Application {
 
         VBox gameObjectSettingsBox = new VBox();
         gameObjectSettingsBox.setPrefWidth(400);
+        gameObjectSettingsBox.setBackground(Background.fill(Theme.BACKGROUND));
         gameObjectSettingsBox.setPadding(new Insets(20));
         gameObjectSettingsBox.setBorder(
                 new Border(
@@ -113,15 +114,26 @@ public class Main extends Application {
 
         KeyFramesTimeline[] kfTimelines = new KeyFramesTimeline[] {
                 new KeyFramesTimeline("PosX", HittingObject.POSITION_X_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("PosY", HittingObject.POSITION_Y_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty())
+                new KeyFramesTimeline("PosY", HittingObject.POSITION_Y_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("ScaleX", HittingObject.SCALE_X_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("ScaleY", HittingObject.SCALE_Y_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("Rot", HittingObject.ROTATION_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("PivotX", HittingObject.PIVOT_X_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("PivotY", HittingObject.PIVOT_Y_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty()),
         };
         for (int i = 0; i < kfTimelines.length; i++) {
             KeyFramesTimeline kft = kfTimelines[i];
-            kft.setBackground(Background.fill(Theme.RAINBOW_START_COLOR.deriveColor(i * 50, 1, 1, 1)));
+            kft.setBackground(Background.fill(Theme.RAINBOW_START_COLOR.deriveColor(i * (360.0 / 7.0), 1, 1, 1)));
             kft.prefWidthProperty().bind(gameObjectSettingsBox.widthProperty());
             kft.selectedKeyFrameProperty().addListener(obs -> {
                 if (kft.getSelectedKeyFrame() != null) {
                     selectedKeyFrame.set(kft.getSelectedKeyFrame());
+                    Arrays.stream(kfTimelines)
+                            .filter(k -> !k.equals(kft))
+                            .forEach(k -> k.setSelectedKeyFrame(null));
+                } else if (kft.isLostKeyFrameFocus()) {
+                    kft.setLostKeyFrameFocus(false);
+                    selectedKeyFrame.set(null);
                     Arrays.stream(kfTimelines)
                             .filter(k -> !k.equals(kft))
                             .forEach(k -> k.setSelectedKeyFrame(null));
@@ -131,11 +143,9 @@ public class Main extends Application {
         VBox.setMargin(kfTimelines[kfTimelines.length - 1], new Insets(0, 0, 10, 0));
 
         objectsTimeline.selectedObjectProperty().addListener(obs -> {
-            if (objectsTimeline.getSelectedObject() == null) {
-                selectedKeyFrame.set(null);
-                Arrays.stream(kfTimelines)
-                        .forEach(k -> k.setSelectedKeyFrame(null));
-            }
+            selectedKeyFrame.set(null);
+            Arrays.stream(kfTimelines)
+                    .forEach(k -> k.setSelectedKeyFrame(null));
         });
 
         KeyFrameEditor keyFrameEditor = new KeyFrameEditor(selectedKeyFrame, objectsTimeline.selectedObjectProperty());

@@ -31,6 +31,7 @@ public class GameObjectsManager {
     public void addObject(int start, int duration) {
         String name = "Object " + (int) (Math.random() * 1000 + 1);
         HittingObject hittingObject = new HittingObject(name, start, duration, 0);
+        hittingObject.initStartKeyFrames();
         for (int i = 0; i < ObjectsTimeline.LAYERS_COUNT; i++) {
             int curLayer = i;
             List<HittingObject> objs = GameObjectsManager.getInstance()
@@ -49,7 +50,15 @@ public class GameObjectsManager {
                 break;
             }
         }
-        getObjects().add(hittingObject);
+        addObject(hittingObject);
+    }
+
+    public void addObject(HittingObject obj) {
+        getObjects().add(obj);
+    }
+
+    public void removeObject(HittingObject obj) {
+        getObjects().remove(obj);
     }
 
     public ObservableList<HittingObject> getObjects() {
