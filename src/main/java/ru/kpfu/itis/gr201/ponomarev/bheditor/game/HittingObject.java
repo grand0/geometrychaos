@@ -30,6 +30,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
     private final IntegerProperty timelineLayer;
     private Timeline timeline;
     private final ObjectProperty<Shape> shape;
+    private final BooleanProperty isHelper;
 
     private final IntegerProperty time;
     private final DoubleProperty positionX;
@@ -139,6 +140,24 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
             }
         };
         this.shape.set(Shape.SQUARE);
+
+        this.isHelper = new BooleanPropertyBase() {
+            @Override
+            protected void invalidated() {
+                super.invalidated();
+                HittingObject.this.fireValueChangedEvent();
+            }
+
+            @Override
+            public Object getBean() {
+                return null;
+            }
+
+            @Override
+            public String getName() {
+                return "isHelper";
+            }
+        };
 
         this.time = new IntegerPropertyBase() {
             @Override
@@ -403,6 +422,18 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
     public void setShape(Shape shape) {
         this.shape.set(shape);
+    }
+
+    public boolean isHelper() {
+        return isHelper.get();
+    }
+
+    public BooleanProperty isHelperProperty() {
+        return isHelper;
+    }
+
+    public void setIsHelper(boolean isHelper) {
+        this.isHelper.set(isHelper);
     }
 
     public int getTime() {

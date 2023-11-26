@@ -9,6 +9,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.GameObjectsManager;
@@ -25,6 +26,7 @@ public class ObjectsTimeline extends Pane {
     private final static double TIMELINE_LAYER_HEIGHT = 20;
     private final static double TIMELINE_CURSOR_SIZE = 20;
     private final static int TIMELINE_MILLIS_PER_WIDTH = 5000;
+    private final static double TIMELINE_CURSOR_SNAP_TOLERANCE = 10;
 
     private final Canvas canvas;
 
@@ -159,16 +161,93 @@ public class ObjectsTimeline extends Pane {
         });
         setOnMouseDragged(event -> {
             if (changingCursorPos) {
-                setCursorPosition(pxToMs(event.getX()) + visualMillisOffset.get());
+                int newCursorPos = pxToMs(event.getX()) + visualMillisOffset.get();
+
+                if (!event.isAltDown()) {
+                    double cursorPx = msToPx(newCursorPos);
+                    for (HittingObject obj : GameObjectsManager.getInstance().getObjects()) {
+                        double objStartPx = msToPx(obj.getStartTime());
+                        double objEndPx = msToPx(obj.getEndTime());
+                        if (Math.abs(cursorPx - objStartPx) <= TIMELINE_CURSOR_SNAP_TOLERANCE) {
+                            newCursorPos = obj.getStartTime();
+                            break;
+                        } else if (Math.abs(cursorPx - objEndPx) <= TIMELINE_CURSOR_SNAP_TOLERANCE) {
+                            newCursorPos = obj.getEndTime();
+                            break;
+                        }
+                    }
+                }
+
+                setCursorPosition(newCursorPos);
             } else if (objectDragStartX != null) {
                 if (selectedObjectStartTimeBeforeDrag != null) {
-                    selectedObject.get().setStartTime(Math.max(0, selectedObjectStartTimeBeforeDrag + pxToMs(event.getX() - objectDragStartX)));
+                    int newStartTime = Math.max(0, selectedObjectStartTimeBeforeDrag + pxToMs(event.getX() - objectDragStartX));
+
+                    if (!event.isAltDown()) {
+                        double selectedStartTimePx = msToPx(newStartTime);
+                        double selectedEndTimePx = msToPx(newStartTime + getSelectedObject().getDuration());
+                        if (Math.abs(msToPx(getCursorPosition()) - selectedStartTimePx) <= TIMELINE_CURSOR_SNAP_TOLERANCE) {
+                            newStartTime = getCursorPosition();
+                        } else if (Math.abs(msToPx(getCursorPosition()) - selectedEndTimePx) <= TIMELINE_CURSOR_SNAP_TOLERANCE) {
+                            newStartTime = getCursorPosition() - getSelectedObject().getDuration();
+                        } else {
+                            for (HittingObject obj : GameObjectsManager.getInstance().getObjects()) {
+                                if (obj.equals(getSelectedObject())) {
+                                    continue;
+                                }
+
+                                double objStartPx = msToPx(obj.getStartTime());
+                                double objEndPx = msToPx(obj.getEndTime());
+                                if (Math.abs(selectedStartTimePx - objStartPx) <= TIMELINE_CURSOR_SNAP_TOLERANCE) {
+                                    newStartTime = obj.getStartTime();
+                                    break;
+                                } else if (Math.abs(selectedStartTimePx - objEndPx) <= TIMELINE_CURSOR_SNAP_TOLERANCE) {
+                                    newStartTime = obj.getEndTime();
+                                    break;
+                                } else if (Math.abs(selectedEndTimePx - objStartPx) <= TIMELINE_CURSOR_SNAP_TOLERANCE) {
+                                    newStartTime = obj.getStartTime() - getSelectedObject().getDuration();
+                                    break;
+                                } else if (Math.abs(selectedEndTimePx - objEndPx) <= TIMELINE_CURSOR_SNAP_TOLERANCE) {
+                                    newStartTime = obj.getEndTime() - getSelectedObject().getDuration();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    selectedObject.get().setStartTime(newStartTime);
+
                     int layer = (int) ((event.getY() - TIMELINE_TIME_AXIS_HEIGHT) / TIMELINE_LAYER_HEIGHT);
                     if (selectedObject.get().getTimelineLayer() != layer) {
                         selectedObject.get().setTimelineLayer(layer);
                     }
-                } else {
-                    selectedObject.get().setDuration(Math.max(0, selectedObjectDurationBeforeDrag + pxToMs(event.getX() - objectDragStartX)));
+                } else if (selectedObjectDurationBeforeDrag != null) {
+                    int newDuration = Math.max(0, selectedObjectDurationBeforeDrag + pxToMs(event.getX() - objectDragStartX));
+
+                    if (!event.isAltDown()) {
+                        double selectedEndTimePx = msToPx(getSelectedObject().getStartTime() + newDuration);
+                        if (Math.abs(msToPx(getCursorPosition()) - selectedEndTimePx) <= TIMELINE_CURSOR_SNAP_TOLERANCE) {
+                            newDuration = getCursorPosition() - getSelectedObject().getStartTime();
+                        } else {
+                            for (HittingObject obj : GameObjectsManager.getInstance().getObjects()) {
+                                if (obj.equals(getSelectedObject())) {
+                                    continue;
+                                }
+
+                                double objStartPx = msToPx(obj.getStartTime());
+                                double objEndPx = msToPx(obj.getEndTime());
+                                if (Math.abs(selectedEndTimePx - objStartPx) <= TIMELINE_CURSOR_SNAP_TOLERANCE) {
+                                    newDuration = obj.getStartTime() - getSelectedObject().getStartTime();
+                                    break;
+                                } else if (Math.abs(selectedEndTimePx - objEndPx) <= TIMELINE_CURSOR_SNAP_TOLERANCE) {
+                                    newDuration = obj.getEndTime() - getSelectedObject().getStartTime();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    selectedObject.get().setDuration(newDuration);
                 }
             }
         });
@@ -271,15 +350,20 @@ public class ObjectsTimeline extends Pane {
             	int start = ho.getStartTime();
                 int end = ho.getEndTime();
                 if (end >= visualMillisOffset.get() && start <= visualMillisOffset.get() + millisPerWidth) {
+                    Color fillColor;
                     if (ho.equals(getSelectedObject())) {
-                        g.setFill(Theme.ACCENT);
+                        fillColor = Theme.ACCENT;
                         g.setStroke(Theme.ACCENT.darker());
                         g.setLineWidth(2.0);
                     } else {
-                        g.setFill(Theme.PRIMARY);
+                        fillColor = Theme.PRIMARY;
                         g.setStroke(Theme.PRIMARY.darker());
                         g.setLineWidth(1.0);
                     }
+                    if (ho.isHelper()) {
+                        fillColor = fillColor.deriveColor(0, 1, 1, 0.8);
+                    }
+                    g.setFill(fillColor);
                     g.fillRoundRect(
                             msToPx(start - visualMillisOffset.get()),
                             TIMELINE_TIME_AXIS_HEIGHT + i * TIMELINE_LAYER_HEIGHT + 1,

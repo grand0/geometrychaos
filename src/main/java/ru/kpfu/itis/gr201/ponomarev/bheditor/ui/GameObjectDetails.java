@@ -4,10 +4,7 @@ import javafx.beans.InvalidationListener;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
 import javafx.collections.FXCollections;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
@@ -21,6 +18,7 @@ public class GameObjectDetails extends Pane {
     private final Spinner<Integer> startTimeSpinner;
     private final Spinner<Integer> durationSpinner;
     private final ComboBox<Shape> shapeComboBox;
+    private final CheckBox isHelperCheckBox;
     private final GridPane gridPane;
 
     private final ObjectProperty<HittingObject> displayingObject = new ObjectPropertyBase<>() {
@@ -77,6 +75,14 @@ public class GameObjectDetails extends Pane {
             }
         });
 
+        isHelperCheckBox = new CheckBox();
+        isHelperCheckBox.selectedProperty().addListener(obs -> {
+            HittingObject obj = displayingObject.get();
+            if (obj != null) {
+                obj.setIsHelper(isHelperCheckBox.isSelected());
+            }
+        });
+
         gridPane = new GridPane();
         gridPane.setVgap(10);
         gridPane.setHgap(10);
@@ -85,6 +91,7 @@ public class GameObjectDetails extends Pane {
         gridPane.addRow(1, makeLabel("Start time"), startTimeSpinner);
         gridPane.addRow(2, makeLabel("Duration"), durationSpinner);
         gridPane.addRow(3, makeLabel("Shape"), shapeComboBox);
+        gridPane.addRow(4, makeLabel("Helper"), isHelperCheckBox);
 
         getChildren().add(gridPane);
 

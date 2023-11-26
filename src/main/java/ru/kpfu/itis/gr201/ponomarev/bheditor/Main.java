@@ -38,14 +38,14 @@ public class Main extends Application {
                 getEndKeyFrame(objectsTimeline)
         );
 
-        TimelineControlButtons timelineControlButtons = new TimelineControlButtons();
-        timelineControlButtons.setAddTimelineListener(() -> {
+        ObjectsTimelineControls objectsTimelineControls = new ObjectsTimelineControls(objectsTimeline.cursorPositionProperty());
+        objectsTimelineControls.setAddTimelineListener(() -> {
             GameObjectsManager.getInstance().addObject(
                     objectsTimeline.getCursorPosition(),
                     3000
             );
         });
-        timelineControlButtons.setPlayPauseListener((playing) -> {
+        objectsTimelineControls.setPlayPauseListener((playing) -> {
             if (!playing) {
                 cursorPositionTimeline.pause();
             } else {
@@ -55,19 +55,19 @@ public class Main extends Application {
                 cursorPositionTimeline.playFrom(new Duration(objectsTimeline.getCursorPosition()));
             }
         });
-        timelineControlButtons.setStopListener(() -> {
+        objectsTimelineControls.setStopListener(() -> {
             cursorPositionTimeline.stop();
             objectsTimeline.setCursorPosition(0);
         });
-        cursorPositionTimeline.setOnFinished(event -> timelineControlButtons.setPlaying(false));
+        cursorPositionTimeline.setOnFinished(event -> objectsTimelineControls.setPlaying(false));
 
         objectsTimeline.prefWidthProperty().bind(primaryStage.widthProperty());
 
-        VBox timelinePanel = new VBox(timelineControlButtons, objectsTimeline);
+        VBox timelinePanel = new VBox(objectsTimelineControls, objectsTimeline);
 
         StackPane gamePane = new StackPane();
         gamePane.setMinSize(0, 0);
-        GameField gameField = new GameField(objectsTimeline.cursorPositionProperty());
+        GameField gameField = new GameField(objectsTimeline.cursorPositionProperty(), objectsTimeline.selectedObjectProperty());
         StackPane.setMargin(gameField, new Insets(20));
         gameField.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         gameField.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);

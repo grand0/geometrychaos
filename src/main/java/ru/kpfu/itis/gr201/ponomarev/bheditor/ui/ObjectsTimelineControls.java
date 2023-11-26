@@ -1,19 +1,25 @@
 package ru.kpfu.itis.gr201.ponomarev.bheditor.ui;
 
+import javafx.beans.property.IntegerProperty;
 import javafx.scene.control.Button;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.layout.HBox;
+import javafx.util.Duration;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.DurationStringConverter;
 
 import java.util.function.Consumer;
 
-public class TimelineControlButtons extends HBox {
+public class ObjectsTimelineControls extends HBox {
 
     private final Button playPauseButton;
     private final Button stopButton;
     private final Button addTimelineButton;
+    private final Spinner<Duration> timeSpinner;
 
     private boolean playing = false;
 
-    public TimelineControlButtons() {
+    public ObjectsTimelineControls(IntegerProperty time) {
         super(12);
 
         playPauseButton = new Button("Play");
@@ -24,7 +30,30 @@ public class TimelineControlButtons extends HBox {
 
         addTimelineButton = new Button("Object");
 
-        getChildren().addAll(playPauseButton, stopButton, addTimelineButton);
+        SpinnerValueFactory<Duration> valueFactory = new SpinnerValueFactory<>() {
+            @Override
+            public void decrement(int steps) {
+                setValue(new Duration(Math.max(0, getValue().toMillis() - steps)));
+            }
+
+            @Override
+            public void increment(int steps) {
+                setValue(new Duration(getValue().toMillis() + steps));
+            }
+        };
+        valueFactory.setConverter(new DurationStringConverter());
+        valueFactory.setValue(new Duration(0));
+        timeSpinner = new Spinner<>(valueFactory);
+        timeSpinner.setEditable(true);
+        timeSpinner.valueProperty().addListener(obs -> {
+            time.set((int) timeSpinner.getValue().toMillis());
+        });
+
+        time.addListener(obs -> {
+            timeSpinner.getEditor().setText(valueFactory.getConverter().toString(new Duration(time.get())));
+        });
+
+        getChildren().addAll(playPauseButton, stopButton, addTimelineButton, timeSpinner);
     }
 
     public void setPlayPauseListener(Consumer<Boolean> handler) {
