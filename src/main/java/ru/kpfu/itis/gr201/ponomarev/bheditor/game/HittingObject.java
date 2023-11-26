@@ -251,10 +251,10 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         super.fireValueChangedEvent();
         if (time != null) {
             if (changedKeyFrames || getTime() != (int) timeline.getCurrentTime().toMillis()) {
+                changedKeyFrames = false;
                 timeline.stop();
                 timeline.playFrom(new Duration(getTime()));
                 timeline.pause();
-                changedKeyFrames = false;
             }
         }
     }
