@@ -5,13 +5,11 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.IntegerPropertyBase;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
+import javafx.geometry.Point2D;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
-import javafx.scene.shape.Ellipse;
-import javafx.scene.shape.Polygon;
-import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.*;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
@@ -19,11 +17,16 @@ import ru.kpfu.itis.gr201.ponomarev.bheditor.game.Shape;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.GameObjectsManager;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
 
+import java.util.Objects;
+
 public class GameField extends Pane {
 
     public static final double FIELD_WIDTH = 1280;
     public static final double FIELD_HEIGHT = 720;
     public static final double FIELD_ASPECT_RATIO = FIELD_WIDTH / FIELD_HEIGHT;
+
+    public static final double PIVOT_CROSS_SIZE = 7;
+    public static final double SHAPE_CENTER_POINT_SIZE = 5;
 
     private boolean listenToObjectsChanges = true;
 
@@ -85,12 +88,19 @@ public class GameField extends Pane {
             HittingObject obj = selectedObject.get();
             obj.setTime(getTime() - obj.getStartTime());
             javafx.scene.shape.Shape shape = makeShape(obj);
-            shape.setFill(null);
-            shape.setStroke(Theme.PRIMARY.darker());
-            shape.setStrokeWidth(3.0);
-            shape.getStrokeDashArray().addAll(10.0, 10.0);
-            shape.setViewOrder(-Double.MAX_VALUE);
-            getChildren().add(shape);
+            if (shape != null) {
+                Rectangle fieldRect = new Rectangle(0, 0, getWidth(), getHeight());
+                javafx.scene.shape.Shape visibleOnField = javafx.scene.shape.Shape.intersect(fieldRect, shape);
+                visibleOnField.setFill(null);
+                visibleOnField.setStroke(Theme.PRIMARY.darker());
+                visibleOnField.setStrokeWidth(3.0);
+                visibleOnField.setStrokeType(StrokeType.INSIDE);
+                visibleOnField.setStrokeLineCap(StrokeLineCap.BUTT);
+                visibleOnField.getStrokeDashArray().addAll(5.0, 5.0);
+                visibleOnField.setViewOrder(-Double.MAX_VALUE);
+                javafx.scene.shape.Shape pivotCross = makePivotCrossWithLineToObjCenterShape(shape, obj);
+                getChildren().addAll(visibleOnField, pivotCross);
+            }
         }
 
         getChildren().addAll(
@@ -102,11 +112,16 @@ public class GameField extends Pane {
                             ho.setTime(getTime() - ho.getStartTime());
                             return makeShape(ho);
                         })
+                        .filter(Objects::nonNull)
                         .toList()
         );
     }
     
     private javafx.scene.shape.Shape makeShape(HittingObject obj) {
+        if (obj.getScaleX() == 0 || obj.getScaleY() == 0) {
+            return null;
+        }
+
         double scalingFactor = getWidth() / FIELD_WIDTH;
         double shapeSize = Shape.DEFAULT_SHAPE_SIZE;
 
@@ -153,6 +168,47 @@ public class GameField extends Pane {
                 new Scale(obj.getScaleX(), obj.getScaleY(), shapeCenterOnScreenX + obj.getPivotX(), shapeCenterOnScreenY + obj.getPivotY())
         );
         return shape;
+    }
+
+    private javafx.scene.shape.Shape makePivotCrossWithLineToObjCenterShape(javafx.scene.shape.Shape shape, HittingObject obj) {
+        double scalingFactor = getWidth() / FIELD_WIDTH;
+        double objCenterOnScreenBeforeTransformX = (obj.getPositionX() * scalingFactor) + getWidth() / 2;
+        double objCenterOnScreenBeforeTransformY = (obj.getPositionY() * scalingFactor) + getHeight() / 2;
+        double pivotX = objCenterOnScreenBeforeTransformX + obj.getPivotX();
+        double pivotY = objCenterOnScreenBeforeTransformY + obj.getPivotY();
+        Point2D actualShapeCenterOnScreen = shape.getLocalToParentTransform().transform(objCenterOnScreenBeforeTransformX, objCenterOnScreenBeforeTransformY);
+        Line vCross = new Line(
+                pivotX,
+                pivotY - PIVOT_CROSS_SIZE / 2,
+                pivotX,
+                pivotY + PIVOT_CROSS_SIZE / 2
+        );
+        Line hCross = new Line(
+                pivotX - PIVOT_CROSS_SIZE / 2,
+                pivotY,
+                pivotX + PIVOT_CROSS_SIZE / 2,
+                pivotY
+        );
+        Line pivotToCenter = new Line(
+                pivotX,
+                pivotY,
+                actualShapeCenterOnScreen.getX(),
+                actualShapeCenterOnScreen.getY()
+        );
+        pivotToCenter.getStrokeDashArray().addAll(10.0, 5.0);
+        pivotToCenter.setStrokeLineCap(StrokeLineCap.BUTT);
+        Circle shapeCenterCircle = new Circle(
+                actualShapeCenterOnScreen.getX(),
+                actualShapeCenterOnScreen.getY(),
+                SHAPE_CENTER_POINT_SIZE / 2
+        );
+        javafx.scene.shape.Shape cross = javafx.scene.shape.Shape.union(vCross, hCross);
+        javafx.scene.shape.Shape crossWithLine = javafx.scene.shape.Shape.union(cross, pivotToCenter);
+        javafx.scene.shape.Shape crossWithLineAndObjCenter = javafx.scene.shape.Shape.union(crossWithLine, shapeCenterCircle);
+        crossWithLineAndObjCenter.setFill(Theme.PRIMARY.darker());
+        crossWithLineAndObjCenter.setStroke(Theme.PRIMARY.darker());
+        crossWithLineAndObjCenter.setViewOrder(-Double.MAX_VALUE);
+        return crossWithLineAndObjCenter;
     }
 
     public int getTime() {

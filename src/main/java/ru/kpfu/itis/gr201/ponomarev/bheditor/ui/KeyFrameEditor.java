@@ -26,6 +26,8 @@ public class KeyFrameEditor extends Pane {
     private final ObjectProperty<KeyFrame> keyFrame;
     private final ObjectProperty<HittingObject> kfParent;
 
+    private boolean listenToKeyFrameChanges = true;
+
     public KeyFrameEditor(ObjectProperty<KeyFrame> selectedKeyFrame, ObjectProperty<HittingObject> selectedObject) {
         kfParent = new ObjectPropertyBase<>() {
             @Override
@@ -53,14 +55,16 @@ public class KeyFrameEditor extends Pane {
         };
         keyFrame.bind(selectedKeyFrame);
         keyFrame.addListener(obs -> {
-            redraw();
+            if (listenToKeyFrameChanges) {
+                redraw();
+            }
         });
 
         timeSpinner = new Spinner<>(0, Integer.MAX_VALUE, 0);
         timeSpinner.setEditable(true);
         timeSpinner.valueProperty().addListener(obs -> {
             KeyFrame kf = keyFrame.get();
-            if (kf != null) {
+            if (kf != null && (int) kf.getTime().toMillis() != timeSpinner.getValue()) {
                 kf.getValues().stream().findFirst().ifPresent(kv -> changeKeyFrame(
                         selectedKeyFrame,
                         (double) kv.getEndValue(),
@@ -79,12 +83,16 @@ public class KeyFrameEditor extends Pane {
         valueSpinner.valueProperty().addListener(obs -> {
             KeyFrame kf = keyFrame.get();
             if (kf != null) {
-                kf.getValues().stream().findFirst().ifPresent(kv -> changeKeyFrame(
-                        selectedKeyFrame,
-                        valueSpinner.getValue(),
-                        (int) kf.getTime().toMillis(),
-                        Interpolators.byInterpolator(kv.getInterpolator())
-                ));
+                kf.getValues().stream().findFirst().ifPresent(kv -> {
+                    if (Double.compare((double) kv.getEndValue(), valueSpinner.getValue()) != 0) {
+                        changeKeyFrame(
+                                selectedKeyFrame,
+                                valueSpinner.getValue(),
+                                (int) kf.getTime().toMillis(),
+                                Interpolators.byInterpolator(kv.getInterpolator())
+                        );
+                    }
+                });
             }
         });
 
@@ -94,12 +102,16 @@ public class KeyFrameEditor extends Pane {
         interpolatorComboBox.valueProperty().addListener(obs -> {
             KeyFrame kf = keyFrame.get();
             if (kf != null) {
-                kf.getValues().stream().findFirst().ifPresent(kv -> changeKeyFrame(
-                        selectedKeyFrame,
-                        (Double) kv.getEndValue(),
-                        (int) kf.getTime().toMillis(),
-                        interpolatorComboBox.getValue()
-                ));
+                kf.getValues().stream().findFirst().ifPresent(kv -> {
+                    if (!Interpolators.byInterpolator(kv.getInterpolator()).equals(interpolatorComboBox.getValue())) {
+                        changeKeyFrame(
+                                selectedKeyFrame,
+                                (Double) kv.getEndValue(),
+                                (int) kf.getTime().toMillis(),
+                                interpolatorComboBox.getValue()
+                        );
+                    }
+                });
             }
         });
 
@@ -116,6 +128,7 @@ public class KeyFrameEditor extends Pane {
     }
 
     private void changeKeyFrame(ObjectProperty<KeyFrame> selectedKeyFrame, double value, int time, Interpolators interpolator) {
+        listenToKeyFrameChanges = false;
         KeyFrame kf = keyFrame.get();
         HittingObject obj = kfParent.get();
         if (kf != null && obj != null) {
@@ -133,6 +146,7 @@ public class KeyFrameEditor extends Pane {
                 keyFrame.bind(selectedKeyFrame);
             }
         }
+        listenToKeyFrameChanges = true;
     }
 
     private void redraw() {
