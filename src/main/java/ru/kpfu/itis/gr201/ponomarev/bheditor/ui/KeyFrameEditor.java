@@ -10,7 +10,6 @@ import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.DoubleComparator;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.anim.ObjectKeyFrame;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.converter.DoubleStringConverter;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.InterpolatorType;
@@ -67,7 +66,7 @@ public class KeyFrameEditor extends Pane {
             if (kf != null && kf.getTime() != timeSpinner.getValue()) {
                 changeKeyFrame(
                         selectedKeyFrame,
-                        (double) kf.getEndValue(), // TODO: change to object
+                        kf.getEndValue(),
                         timeSpinner.getValue(),
                         kf.getInterpolatorType()
                 );
@@ -82,7 +81,7 @@ public class KeyFrameEditor extends Pane {
         valueSpinner.setEditable(true);
         valueSpinner.valueProperty().addListener(obs -> {
             ObjectKeyFrame kf = keyFrame.get();
-            if (kf != null && new DoubleComparator().compare((double) kf.getEndValue(), valueSpinner.getValue()) != 0) { // TODO: change to object
+            if (kf != null && !kf.getEndValue().equals(valueSpinner.getValue())) {
                 changeKeyFrame(
                         selectedKeyFrame,
                         valueSpinner.getValue(),
@@ -100,7 +99,7 @@ public class KeyFrameEditor extends Pane {
             if (kf != null && !kf.getInterpolatorType().equals(interpolatorComboBox.getValue())) {
                 changeKeyFrame(
                         selectedKeyFrame,
-                        (double) kf.getEndValue(), // TODO: change to object
+                        kf.getEndValue(),
                         kf.getTime(),
                         interpolatorComboBox.getValue()
                 );
@@ -119,7 +118,7 @@ public class KeyFrameEditor extends Pane {
         redraw();
     }
 
-    private void changeKeyFrame(ObjectProperty<ObjectKeyFrame> selectedKeyFrame, double value, int time, InterpolatorType interpolator) {
+    private void changeKeyFrame(ObjectProperty<ObjectKeyFrame> selectedKeyFrame, Object value, int time, InterpolatorType interpolator) {
         listenToKeyFrameChanges = false;
         ObjectKeyFrame kf = keyFrame.get();
         HittingObject obj = kfParent.get();

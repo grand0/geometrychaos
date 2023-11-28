@@ -273,13 +273,14 @@ public class ObjectsTimeline extends Pane {
                 );
                 for (ObjectKeyFrame kf : getSelectedObject().getKeyFrames()) {
                     copy.addKeyFrame(
-                            (double) kf.getEndValue(), // TODO: change to object
+                            kf.getEndValue(),
                             kf.getTime(),
                             kf.getInterpolatorType(),
                             kf.getTag()
                     );
                 }
                 copy.setShape(getSelectedObject().getShape());
+                copy.setIsHelper(getSelectedObject().isHelper());
                 GameObjectsManager.getInstance().addObject(copy);
                 setSelectedObject(copy);
             }

@@ -114,13 +114,13 @@ public class Main extends Application {
         };
 
         KeyFramesTimeline[] kfTimelines = new KeyFramesTimeline[] {
-                new KeyFramesTimeline("PosX", HittingObject.POSITION_X_KEYFRAME_NAME_TAG, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("PosY", HittingObject.POSITION_Y_KEYFRAME_NAME_TAG, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("ScaleX", HittingObject.SCALE_X_KEYFRAME_NAME_TAG, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("ScaleY", HittingObject.SCALE_Y_KEYFRAME_NAME_TAG, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("Rot", HittingObject.ROTATION_KEYFRAME_NAME_TAG, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("PivotX", HittingObject.PIVOT_X_KEYFRAME_NAME_TAG, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("PivotY", HittingObject.PIVOT_Y_KEYFRAME_NAME_TAG, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("PosX", HittingObject.POSITION_X_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("PosY", HittingObject.POSITION_Y_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("ScaleX", HittingObject.SCALE_X_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("ScaleY", HittingObject.SCALE_Y_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("Rot", HittingObject.ROTATION_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("PivotX", HittingObject.PIVOT_X_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("PivotY", HittingObject.PIVOT_Y_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
         };
         for (int i = 0; i < kfTimelines.length; i++) {
             KeyFramesTimeline kft = kfTimelines[i];

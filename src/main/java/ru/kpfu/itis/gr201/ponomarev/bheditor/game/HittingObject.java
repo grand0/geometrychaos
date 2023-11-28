@@ -1,7 +1,5 @@
 package ru.kpfu.itis.gr201.ponomarev.bheditor.game;
 
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.beans.property.*;
 import javafx.beans.value.WritableValue;
 import javafx.collections.ObservableList;
@@ -10,25 +8,33 @@ import ru.kpfu.itis.gr201.ponomarev.bheditor.util.InterpolatorType;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.anim.KeyFramesInterpolationDriver;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.anim.ObjectKeyFrame;
 
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
 public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
-    public static final String POSITION_X_KEYFRAME_NAME_TAG = "positionX";
-    public static final String POSITION_Y_KEYFRAME_NAME_TAG = "positionY";
-    public static final String SCALE_X_KEYFRAME_NAME_TAG = "scaleX";
-    public static final String SCALE_Y_KEYFRAME_NAME_TAG = "scaleY";
-    public static final String ROTATION_KEYFRAME_NAME_TAG = "rotation";
-    public static final String PIVOT_X_KEYFRAME_NAME_TAG = "pivotX";
-    public static final String PIVOT_Y_KEYFRAME_NAME_TAG = "pivotY";
+    public static final String POSITION_X_KEYFRAME_TAG = "positionX";
+    public static final String POSITION_Y_KEYFRAME_TAG = "positionY";
+    public static final String SCALE_X_KEYFRAME_TAG = "scaleX";
+    public static final String SCALE_Y_KEYFRAME_TAG = "scaleY";
+    public static final String ROTATION_KEYFRAME_TAG = "rotation";
+    public static final String PIVOT_X_KEYFRAME_TAG = "pivotX";
+    public static final String PIVOT_Y_KEYFRAME_TAG = "pivotY";
+
+    public static final String[] KEYFRAME_TAGS = new String[] {
+            POSITION_X_KEYFRAME_TAG,
+            POSITION_Y_KEYFRAME_TAG,
+            SCALE_X_KEYFRAME_TAG,
+            SCALE_Y_KEYFRAME_TAG,
+            ROTATION_KEYFRAME_TAG,
+            PIVOT_X_KEYFRAME_TAG,
+            PIVOT_Y_KEYFRAME_TAG,
+    };
 
     private final StringProperty name;
     private final IntegerProperty startTime;
     private final IntegerProperty duration;
     private final IntegerProperty timelineLayer;
-//    private Timeline timeline;
     private final KeyFramesInterpolationDriver interpolationDriver;
     private final ObjectProperty<Shape> shape;
     private final BooleanProperty isHelper;
@@ -221,48 +227,14 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
     }
 
     public void initStartKeyFrames() {
-        addKeyFrame(
-                0.0,
-                1,
-                InterpolatorType.INSTANT,
-                POSITION_X_KEYFRAME_NAME_TAG
-        );
-        addKeyFrame(
-                0.0,
-                1,
-                InterpolatorType.INSTANT,
-                POSITION_Y_KEYFRAME_NAME_TAG
-        );
-        addKeyFrame(
-                1.0,
-                1,
-                InterpolatorType.INSTANT,
-                SCALE_X_KEYFRAME_NAME_TAG
-        );
-        addKeyFrame(
-                1.0,
-                1,
-                InterpolatorType.INSTANT,
-                SCALE_Y_KEYFRAME_NAME_TAG
-        );
-        addKeyFrame(
-                0.0,
-                1,
-                InterpolatorType.INSTANT,
-                ROTATION_KEYFRAME_NAME_TAG
-        );
-        addKeyFrame(
-                0.0,
-                1,
-                InterpolatorType.INSTANT,
-                PIVOT_X_KEYFRAME_NAME_TAG
-        );
-        addKeyFrame(
-                0.0,
-                1,
-                InterpolatorType.INSTANT,
-                PIVOT_Y_KEYFRAME_NAME_TAG
-        );
+        for (String tag : KEYFRAME_TAGS) {
+            addKeyFrame(
+                    getDefaultValueForTag(tag),
+                    0,
+                    InterpolatorType.INSTANT,
+                    tag
+            );
+        }
     }
 
     @Override
@@ -277,13 +249,6 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
     }
 
     public Optional<ObjectKeyFrame> getKeyFrame(int time, String tag) {
-//        return timeline.getKeyFrames()
-//                .stream()
-//                .filter(
-//                        kf -> kf.getName().startsWith(namePrefix)
-//                                && kf.getTime().toMillis() == time
-//                )
-//                .findFirst();
         return interpolationDriver.getKeyFrames()
                 .stream()
                 .filter(
@@ -292,16 +257,16 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
                 .findFirst();
     }
 
-    public ObjectKeyFrame addKeyFrame(double value, int time, InterpolatorType interpolator, String tag) {
-        WritableValue<Number> prop = null;
+    public ObjectKeyFrame addKeyFrame(Object value, int time, InterpolatorType interpolator, String tag) {
+        WritableValue<?> prop = null;
         switch (tag) {
-            case POSITION_X_KEYFRAME_NAME_TAG -> prop = positionX;
-            case POSITION_Y_KEYFRAME_NAME_TAG -> prop = positionY;
-            case SCALE_X_KEYFRAME_NAME_TAG -> prop = scaleX;
-            case SCALE_Y_KEYFRAME_NAME_TAG -> prop = scaleY;
-            case ROTATION_KEYFRAME_NAME_TAG -> prop = rotation;
-            case PIVOT_X_KEYFRAME_NAME_TAG -> prop = pivotX;
-            case PIVOT_Y_KEYFRAME_NAME_TAG -> prop = pivotY;
+            case POSITION_X_KEYFRAME_TAG -> prop = positionX;
+            case POSITION_Y_KEYFRAME_TAG -> prop = positionY;
+            case SCALE_X_KEYFRAME_TAG -> prop = scaleX;
+            case SCALE_Y_KEYFRAME_TAG -> prop = scaleY;
+            case ROTATION_KEYFRAME_TAG -> prop = rotation;
+            case PIVOT_X_KEYFRAME_TAG -> prop = pivotX;
+            case PIVOT_Y_KEYFRAME_TAG -> prop = pivotY;
         }
         if (prop == null) {
             throw new IllegalArgumentException("Unknown property");
@@ -309,21 +274,8 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         return addKeyFrame(value, time, interpolator, tag, prop);
     }
 
-    private ObjectKeyFrame addKeyFrame(double value, int time, InterpolatorType interpolator, String tag, WritableValue<Number> property) {
-//        getKeyFrame(time, namePrefix).ifPresent(keyFrame -> timeline.getKeyFrames().remove(keyFrame));
-//
-//        KeyFrame kf = new KeyFrame(
-//                new Duration(time),
-//                namePrefix + time,
-//                new KeyValue(
-//                        property,
-//                        value,
-//                        interpolator.getInterpolator()
-//                )
-//        );
-//        addKeyFrame(kf);
-//        return kf;
-
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private ObjectKeyFrame addKeyFrame(Object value, int time, InterpolatorType interpolator, String tag, WritableValue property) {
         getKeyFrame(time, tag).ifPresent(kf -> interpolationDriver.getKeyFrames().remove(kf));
         ObjectKeyFrame kf = new ObjectKeyFrame(
                 time,
@@ -348,9 +300,22 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         fireValueChangedEvent();
     }
 
-//    public static String getPrefixFromKeyFrameName(String name) {
-//        return name.replaceAll("\\d", "");
-//    }
+    public static Object getDefaultValueForTag(String tag) {
+        switch (tag) {
+            case POSITION_X_KEYFRAME_TAG,
+                    POSITION_Y_KEYFRAME_TAG,
+                    ROTATION_KEYFRAME_TAG,
+                    PIVOT_X_KEYFRAME_TAG,
+                    PIVOT_Y_KEYFRAME_TAG -> {
+                return 0.0;
+            }
+            case SCALE_X_KEYFRAME_TAG,
+                    SCALE_Y_KEYFRAME_TAG -> {
+                return 1.0;
+            }
+        }
+        throw new RuntimeException("Unknown tag.");
+    }
 
     public ObservableList<ObjectKeyFrame> getKeyFrames() {
         return interpolationDriver.getKeyFrames();

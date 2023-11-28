@@ -100,7 +100,7 @@ public class KeyFramesTimeline extends Pane {
         setOnMouseClicked(event -> {
             if (hoveringAddButton && currentObject.get() != null) {
                 currentObject.get().addKeyFrame(
-                        0,
+                        HittingObject.getDefaultValueForTag(keyFrameTag),
                         currentObject.get().getTime(),
                         InterpolatorType.LINEAR,
                         keyFrameTag
