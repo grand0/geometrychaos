@@ -1,4 +1,4 @@
-package ru.kpfu.itis.gr201.ponomarev.bheditor.util;
+package ru.kpfu.itis.gr201.ponomarev.bheditor.util.converter;
 
 import javafx.util.Duration;
 import javafx.util.StringConverter;

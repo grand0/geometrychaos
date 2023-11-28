@@ -9,7 +9,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.Shape;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.ShapeStringConverter;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.converter.ShapeStringConverter;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
 
 public class GameObjectDetails extends Pane {

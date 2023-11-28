@@ -6,7 +6,7 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.util.Duration;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.DurationStringConverter;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.converter.DurationStringConverter;
 
 import java.util.function.Consumer;
 

@@ -14,8 +14,9 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.*;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.GameObjectsManager;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.game.GameObjectsManager;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.anim.ObjectKeyFrame;
 
 import java.util.Arrays;
 
@@ -100,7 +101,7 @@ public class Main extends Application {
         GameObjectDetails gameObjectDetails = new GameObjectDetails(objectsTimeline.selectedObjectProperty());
         VBox.setMargin(gameObjectDetails, new Insets(0, 0, 10, 0));
 
-        ObjectProperty<KeyFrame> selectedKeyFrame = new ObjectPropertyBase<>() {
+        ObjectProperty<ObjectKeyFrame> selectedKeyFrame = new ObjectPropertyBase<>() {
             @Override
             public Object getBean() {
                 return null;
@@ -113,13 +114,13 @@ public class Main extends Application {
         };
 
         KeyFramesTimeline[] kfTimelines = new KeyFramesTimeline[] {
-                new KeyFramesTimeline("PosX", HittingObject.POSITION_X_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("PosY", HittingObject.POSITION_Y_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("ScaleX", HittingObject.SCALE_X_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("ScaleY", HittingObject.SCALE_Y_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("Rot", HittingObject.ROTATION_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("PivotX", HittingObject.PIVOT_X_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("PivotY", HittingObject.PIVOT_Y_KEYFRAME_NAME_PREFIX, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("PosX", HittingObject.POSITION_X_KEYFRAME_NAME_TAG, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("PosY", HittingObject.POSITION_Y_KEYFRAME_NAME_TAG, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("ScaleX", HittingObject.SCALE_X_KEYFRAME_NAME_TAG, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("ScaleY", HittingObject.SCALE_Y_KEYFRAME_NAME_TAG, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("Rot", HittingObject.ROTATION_KEYFRAME_NAME_TAG, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("PivotX", HittingObject.PIVOT_X_KEYFRAME_NAME_TAG, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("PivotY", HittingObject.PIVOT_Y_KEYFRAME_NAME_TAG, objectsTimeline.selectedObjectProperty()),
         };
         for (int i = 0; i < kfTimelines.length; i++) {
             KeyFramesTimeline kft = kfTimelines[i];

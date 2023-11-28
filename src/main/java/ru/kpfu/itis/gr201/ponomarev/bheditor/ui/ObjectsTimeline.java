@@ -1,6 +1,5 @@
 package ru.kpfu.itis.gr201.ponomarev.bheditor.ui;
 
-import javafx.animation.KeyFrame;
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.*;
 import javafx.geometry.VPos;
@@ -12,9 +11,9 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.GameObjectsManager;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Interpolators;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.game.GameObjectsManager;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.anim.ObjectKeyFrame;
 
 import java.util.Comparator;
 
@@ -272,15 +271,13 @@ public class ObjectsTimeline extends Pane {
                         getSelectedObject().getDuration(),
                         getSelectedObject().getTimelineLayer() == LAYERS_COUNT - 1 ? 0 : getSelectedObject().getTimelineLayer() + 1
                 );
-                for (KeyFrame kf : getSelectedObject().getKeyFrames()) {
-                    kf.getValues().stream().findFirst().ifPresent(kv -> {
-                        copy.addKeyFrame(
-                                (double) kv.getEndValue(),
-                                (int) kf.getTime().toMillis(),
-                                Interpolators.byInterpolator(kv.getInterpolator()),
-                                HittingObject.getPrefixFromKeyFrameName(kf.getName())
-                        );
-                    });
+                for (ObjectKeyFrame kf : getSelectedObject().getKeyFrames()) {
+                    copy.addKeyFrame(
+                            (double) kf.getEndValue(), // TODO: change to object
+                            kf.getTime(),
+                            kf.getInterpolatorType(),
+                            kf.getTag()
+                    );
                 }
                 copy.setShape(getSelectedObject().getShape());
                 GameObjectsManager.getInstance().addObject(copy);

@@ -1,7 +1,5 @@
 package ru.kpfu.itis.gr201.ponomarev.bheditor.ui;
 
-import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
 import javafx.collections.FXCollections;
@@ -12,23 +10,25 @@ import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.DoubleStringConverter;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Interpolators;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.InterpolatorsStringConverter;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.DoubleComparator;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.anim.ObjectKeyFrame;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.converter.DoubleStringConverter;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.InterpolatorType;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.converter.InterpolatorsStringConverter;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
 
 public class KeyFrameEditor extends Pane {
 
     private final Spinner<Integer> timeSpinner;
     private final Spinner<Double> valueSpinner;
-    private final ComboBox<Interpolators> interpolatorComboBox;
+    private final ComboBox<InterpolatorType> interpolatorComboBox;
 
-    private final ObjectProperty<KeyFrame> keyFrame;
+    private final ObjectProperty<ObjectKeyFrame> keyFrame;
     private final ObjectProperty<HittingObject> kfParent;
 
     private boolean listenToKeyFrameChanges = true;
 
-    public KeyFrameEditor(ObjectProperty<KeyFrame> selectedKeyFrame, ObjectProperty<HittingObject> selectedObject) {
+    public KeyFrameEditor(ObjectProperty<ObjectKeyFrame> selectedKeyFrame, ObjectProperty<HittingObject> selectedObject) {
         kfParent = new ObjectPropertyBase<>() {
             @Override
             public Object getBean() {
@@ -63,14 +63,14 @@ public class KeyFrameEditor extends Pane {
         timeSpinner = new Spinner<>(0, Integer.MAX_VALUE, 0);
         timeSpinner.setEditable(true);
         timeSpinner.valueProperty().addListener(obs -> {
-            KeyFrame kf = keyFrame.get();
-            if (kf != null && (int) kf.getTime().toMillis() != timeSpinner.getValue()) {
-                kf.getValues().stream().findFirst().ifPresent(kv -> changeKeyFrame(
+            ObjectKeyFrame kf = keyFrame.get();
+            if (kf != null && kf.getTime() != timeSpinner.getValue()) {
+                changeKeyFrame(
                         selectedKeyFrame,
-                        (double) kv.getEndValue(),
+                        (double) kf.getEndValue(), // TODO: change to object
                         timeSpinner.getValue(),
-                        Interpolators.byInterpolator(kv.getInterpolator())
-                ));
+                        kf.getInterpolatorType()
+                );
             }
         });
 
@@ -81,37 +81,29 @@ public class KeyFrameEditor extends Pane {
         valueSpinner = new Spinner<>(valueFactory);
         valueSpinner.setEditable(true);
         valueSpinner.valueProperty().addListener(obs -> {
-            KeyFrame kf = keyFrame.get();
-            if (kf != null) {
-                kf.getValues().stream().findFirst().ifPresent(kv -> {
-                    if (Double.compare((double) kv.getEndValue(), valueSpinner.getValue()) != 0) {
-                        changeKeyFrame(
-                                selectedKeyFrame,
-                                valueSpinner.getValue(),
-                                (int) kf.getTime().toMillis(),
-                                Interpolators.byInterpolator(kv.getInterpolator())
-                        );
-                    }
-                });
+            ObjectKeyFrame kf = keyFrame.get();
+            if (kf != null && new DoubleComparator().compare((double) kf.getEndValue(), valueSpinner.getValue()) != 0) { // TODO: change to object
+                changeKeyFrame(
+                        selectedKeyFrame,
+                        valueSpinner.getValue(),
+                        kf.getTime(),
+                        kf.getInterpolatorType()
+                );
             }
         });
 
         interpolatorComboBox = new ComboBox<>();
-        interpolatorComboBox.setItems(FXCollections.observableArrayList(Interpolators.values()));
+        interpolatorComboBox.setItems(FXCollections.observableArrayList(InterpolatorType.values()));
         interpolatorComboBox.setConverter(new InterpolatorsStringConverter());
         interpolatorComboBox.valueProperty().addListener(obs -> {
-            KeyFrame kf = keyFrame.get();
-            if (kf != null) {
-                kf.getValues().stream().findFirst().ifPresent(kv -> {
-                    if (!Interpolators.byInterpolator(kv.getInterpolator()).equals(interpolatorComboBox.getValue())) {
-                        changeKeyFrame(
-                                selectedKeyFrame,
-                                (Double) kv.getEndValue(),
-                                (int) kf.getTime().toMillis(),
-                                interpolatorComboBox.getValue()
-                        );
-                    }
-                });
+            ObjectKeyFrame kf = keyFrame.get();
+            if (kf != null && !kf.getInterpolatorType().equals(interpolatorComboBox.getValue())) {
+                changeKeyFrame(
+                        selectedKeyFrame,
+                        (double) kf.getEndValue(), // TODO: change to object
+                        kf.getTime(),
+                        interpolatorComboBox.getValue()
+                );
             }
         });
 
@@ -127,24 +119,21 @@ public class KeyFrameEditor extends Pane {
         redraw();
     }
 
-    private void changeKeyFrame(ObjectProperty<KeyFrame> selectedKeyFrame, double value, int time, Interpolators interpolator) {
+    private void changeKeyFrame(ObjectProperty<ObjectKeyFrame> selectedKeyFrame, double value, int time, InterpolatorType interpolator) {
         listenToKeyFrameChanges = false;
-        KeyFrame kf = keyFrame.get();
+        ObjectKeyFrame kf = keyFrame.get();
         HittingObject obj = kfParent.get();
         if (kf != null && obj != null) {
-            KeyValue kv = kf.getValues().stream().findFirst().orElse(null);
-            if (kv != null) {
-                obj.removeKeyFrame(kf);
-                kf = obj.addKeyFrame(
-                        value,
-                        time,
-                        interpolator,
-                        kf.getName().replaceAll("\\d", "")
-                );
-                keyFrame.unbind();
-                keyFrame.set(kf);
-                keyFrame.bind(selectedKeyFrame);
-            }
+            obj.removeKeyFrame(kf);
+            kf = obj.addKeyFrame(
+                    value,
+                    time,
+                    interpolator,
+                    kf.getTag()
+            );
+            keyFrame.unbind();
+            keyFrame.set(kf);
+            keyFrame.bind(selectedKeyFrame);
         }
         listenToKeyFrameChanges = true;
     }
@@ -157,12 +146,9 @@ public class KeyFrameEditor extends Pane {
 
         setVisible(true);
 
-        timeSpinner.getEditor().setText(String.valueOf((int) keyFrame.get().getTime().toMillis()));
-
-        keyFrame.get().getValues().stream().findFirst().ifPresent(kv -> {
-            valueSpinner.getEditor().setText(String.valueOf((double) kv.getEndValue()));
-            interpolatorComboBox.setValue(Interpolators.byInterpolator(kv.getInterpolator()));
-        });
+        timeSpinner.getEditor().setText(String.valueOf(keyFrame.get().getTime()));
+        valueSpinner.getEditor().setText(String.valueOf(keyFrame.get().getEndValue()));
+        interpolatorComboBox.setValue(keyFrame.get().getInterpolatorType());
     }
 
     private Label makeLabel(String text) {
@@ -171,15 +157,15 @@ public class KeyFrameEditor extends Pane {
         return label;
     }
 
-    public KeyFrame getKeyFrame() {
+    public ObjectKeyFrame getKeyFrame() {
         return keyFrame.get();
     }
 
-    public ObjectProperty<KeyFrame> keyFrameProperty() {
+    public ObjectProperty<ObjectKeyFrame> keyFrameProperty() {
         return keyFrame;
     }
 
-    public void setKeyFrame(KeyFrame keyFrame) {
+    public void setKeyFrame(ObjectKeyFrame keyFrame) {
         this.keyFrame.set(keyFrame);
     }
 

@@ -1,6 +1,5 @@
 package ru.kpfu.itis.gr201.ponomarev.bheditor.ui;
 
-import javafx.animation.KeyFrame;
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
@@ -12,8 +11,9 @@ import javafx.scene.layout.Pane;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Interpolators;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.InterpolatorType;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.anim.ObjectKeyFrame;
 
 import java.util.List;
 
@@ -28,17 +28,17 @@ public class KeyFramesTimeline extends Pane {
     private final Canvas canvas;
 
     private final String name;
-    private final String keyFrameNamePrefix;
+    private final String keyFrameTag;
     private final ObjectProperty<HittingObject> currentObject;
-    private final ObjectProperty<KeyFrame> selectedKeyFrame;
+    private final ObjectProperty<ObjectKeyFrame> selectedKeyFrame;
 
     private boolean hoveringAddButton = false;
 
     private boolean lostKeyFrameFocus = false;
 
-    public KeyFramesTimeline(String name, String keyFrameNamePrefix, ObjectProperty<HittingObject> currentObject) {
+    public KeyFramesTimeline(String name, String keyFrameTag, ObjectProperty<HittingObject> currentObject) {
         this.name = name;
-        this.keyFrameNamePrefix = keyFrameNamePrefix;
+        this.keyFrameTag = keyFrameTag;
 
         this.currentObject = new ObjectPropertyBase<>() {
             @Override
@@ -102,13 +102,13 @@ public class KeyFramesTimeline extends Pane {
                 currentObject.get().addKeyFrame(
                         0,
                         currentObject.get().getTime(),
-                        Interpolators.LINEAR,
-                        keyFrameNamePrefix
+                        InterpolatorType.LINEAR,
+                        keyFrameTag
                 );
             } else {
                 boolean selected = false;
-                for (KeyFrame kf : getKeyFrames()) {
-                    double centerX = msToPx((int) kf.getTime().toMillis()) + ADD_KEYFRAME_BUTTON_SIZE + TIMELINE_HORIZONTAL_GAP;
+                for (ObjectKeyFrame kf : getKeyFrames()) {
+                    double centerX = msToPx(kf.getTime()) + ADD_KEYFRAME_BUTTON_SIZE + TIMELINE_HORIZONTAL_GAP;
                     if (event.getX() >= centerX - KEYFRAME_SIZE / 2 && event.getX() <= centerX + KEYFRAME_SIZE / 2) {
                         setLostKeyFrameFocus(false);
                         setSelectedKeyFrame(kf);
@@ -164,7 +164,7 @@ public class KeyFramesTimeline extends Pane {
             g.setFont(Font.font(16));
             g.fillText(name, getWidth() - 10, TIMELINE_HEIGHT / 2);
 
-            for (KeyFrame kf : getKeyFrames()) {
+            for (ObjectKeyFrame kf : getKeyFrames()) {
                 double kfSize = KEYFRAME_SIZE;
                 if (getSelectedKeyFrame() != null && kf.equals(getSelectedKeyFrame())) {
                     g.setFill(Theme.ACCENT);
@@ -172,7 +172,7 @@ public class KeyFramesTimeline extends Pane {
                 } else {
                     g.setFill(Theme.PRIMARY);
                 }
-                double centerX = msToPx((int) kf.getTime().toMillis()) + ADD_KEYFRAME_BUTTON_SIZE + TIMELINE_HORIZONTAL_GAP;
+                double centerX = msToPx(kf.getTime()) + ADD_KEYFRAME_BUTTON_SIZE + TIMELINE_HORIZONTAL_GAP;
                 g.fillOval(centerX - kfSize / 2, TIMELINE_HEIGHT / 2 - kfSize / 2, kfSize, kfSize);
             }
 
@@ -199,12 +199,12 @@ public class KeyFramesTimeline extends Pane {
         g.strokeLine(ADD_KEYFRAME_BUTTON_SIZE * 0.25, ADD_KEYFRAME_BUTTON_SIZE / 2, ADD_KEYFRAME_BUTTON_SIZE * 0.75, ADD_KEYFRAME_BUTTON_SIZE / 2);
     }
 
-    private List<KeyFrame> getKeyFrames() {
+    private List<ObjectKeyFrame> getKeyFrames() {
         return currentObject.get()
-                .getTimeline()
+                .getInterpolationDriver()
                 .getKeyFrames()
                 .stream()
-                .filter(kf -> kf.getName().startsWith(keyFrameNamePrefix))
+                .filter(kf -> kf.getTag().equals(keyFrameTag))
                 .toList();
     }
 
@@ -224,15 +224,15 @@ public class KeyFramesTimeline extends Pane {
         this.currentObject.set(currentObject);
     }
 
-    public KeyFrame getSelectedKeyFrame() {
+    public ObjectKeyFrame getSelectedKeyFrame() {
         return selectedKeyFrame.get();
     }
 
-    public ObjectProperty<KeyFrame> selectedKeyFrameProperty() {
+    public ObjectProperty<ObjectKeyFrame> selectedKeyFrameProperty() {
         return selectedKeyFrame;
     }
 
-    public void setSelectedKeyFrame(KeyFrame selectedKeyFrame) {
+    public void setSelectedKeyFrame(ObjectKeyFrame selectedKeyFrame) {
         this.selectedKeyFrame.set(selectedKeyFrame);
     }
 

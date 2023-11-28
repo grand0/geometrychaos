@@ -14,7 +14,7 @@ import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.Shape;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.GameObjectsManager;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.game.GameObjectsManager;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
 
 import java.util.Objects;

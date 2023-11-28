@@ -1,11 +1,10 @@
-package ru.kpfu.itis.gr201.ponomarev.bheditor.util;
+package ru.kpfu.itis.gr201.ponomarev.bheditor.game;
 
 import javafx.beans.Observable;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.ObjectsTimeline;
 
 import java.util.List;

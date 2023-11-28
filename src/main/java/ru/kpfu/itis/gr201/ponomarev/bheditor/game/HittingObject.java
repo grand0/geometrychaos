@@ -1,14 +1,14 @@
 package ru.kpfu.itis.gr201.ponomarev.bheditor.game;
 
 import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.beans.property.*;
 import javafx.beans.value.WritableValue;
 import javafx.collections.ObservableList;
-import javafx.util.Duration;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.ObjectsTimeline;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Interpolators;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.InterpolatorType;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.anim.KeyFramesInterpolationDriver;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.anim.ObjectKeyFrame;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -16,19 +16,20 @@ import java.util.Optional;
 
 public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
-    public static final String POSITION_X_KEYFRAME_NAME_PREFIX = "positionX";
-    public static final String POSITION_Y_KEYFRAME_NAME_PREFIX = "positionY";
-    public static final String SCALE_X_KEYFRAME_NAME_PREFIX = "scaleX";
-    public static final String SCALE_Y_KEYFRAME_NAME_PREFIX = "scaleY";
-    public static final String ROTATION_KEYFRAME_NAME_PREFIX = "rotation";
-    public static final String PIVOT_X_KEYFRAME_NAME_PREFIX = "pivotX";
-    public static final String PIVOT_Y_KEYFRAME_NAME_PREFIX = "pivotY";
+    public static final String POSITION_X_KEYFRAME_NAME_TAG = "positionX";
+    public static final String POSITION_Y_KEYFRAME_NAME_TAG = "positionY";
+    public static final String SCALE_X_KEYFRAME_NAME_TAG = "scaleX";
+    public static final String SCALE_Y_KEYFRAME_NAME_TAG = "scaleY";
+    public static final String ROTATION_KEYFRAME_NAME_TAG = "rotation";
+    public static final String PIVOT_X_KEYFRAME_NAME_TAG = "pivotX";
+    public static final String PIVOT_Y_KEYFRAME_NAME_TAG = "pivotY";
 
     private final StringProperty name;
     private final IntegerProperty startTime;
     private final IntegerProperty duration;
     private final IntegerProperty timelineLayer;
-    private Timeline timeline;
+//    private Timeline timeline;
+    private final KeyFramesInterpolationDriver interpolationDriver;
     private final ObjectProperty<Shape> shape;
     private final BooleanProperty isHelper;
 
@@ -120,7 +121,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         };
         this.timelineLayer.set(timelineLayer);
 
-        this.timeline = new Timeline();
+        this.interpolationDriver = new KeyFramesInterpolationDriver();
 
         this.shape = new ObjectPropertyBase<>() {
             @Override
@@ -223,44 +224,44 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         addKeyFrame(
                 0.0,
                 1,
-                Interpolators.INSTANT,
-                POSITION_X_KEYFRAME_NAME_PREFIX
+                InterpolatorType.INSTANT,
+                POSITION_X_KEYFRAME_NAME_TAG
         );
         addKeyFrame(
                 0.0,
                 1,
-                Interpolators.INSTANT,
-                POSITION_Y_KEYFRAME_NAME_PREFIX
+                InterpolatorType.INSTANT,
+                POSITION_Y_KEYFRAME_NAME_TAG
         );
         addKeyFrame(
                 1.0,
                 1,
-                Interpolators.INSTANT,
-                SCALE_X_KEYFRAME_NAME_PREFIX
+                InterpolatorType.INSTANT,
+                SCALE_X_KEYFRAME_NAME_TAG
         );
         addKeyFrame(
                 1.0,
                 1,
-                Interpolators.INSTANT,
-                SCALE_Y_KEYFRAME_NAME_PREFIX
+                InterpolatorType.INSTANT,
+                SCALE_Y_KEYFRAME_NAME_TAG
         );
         addKeyFrame(
                 0.0,
                 1,
-                Interpolators.INSTANT,
-                ROTATION_KEYFRAME_NAME_PREFIX
+                InterpolatorType.INSTANT,
+                ROTATION_KEYFRAME_NAME_TAG
         );
         addKeyFrame(
                 0.0,
                 1,
-                Interpolators.INSTANT,
-                PIVOT_X_KEYFRAME_NAME_PREFIX
+                InterpolatorType.INSTANT,
+                PIVOT_X_KEYFRAME_NAME_TAG
         );
         addKeyFrame(
                 0.0,
                 1,
-                Interpolators.INSTANT,
-                PIVOT_Y_KEYFRAME_NAME_PREFIX
+                InterpolatorType.INSTANT,
+                PIVOT_Y_KEYFRAME_NAME_TAG
         );
     }
 
@@ -268,76 +269,91 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
     protected void fireValueChangedEvent() {
         super.fireValueChangedEvent();
         if (time != null) {
-            if (changedKeyFrames || getTime() != (int) timeline.getCurrentTime().toMillis()) {
+            if (changedKeyFrames || getTime() != interpolationDriver.getTime()) {
                 changedKeyFrames = false;
-                timeline.stop();
-                timeline.playFrom(new Duration(getTime()));
-                timeline.pause();
+                interpolationDriver.setTime(getTime());
             }
         }
     }
 
-    public Optional<KeyFrame> getKeyFrame(int time, String namePrefix) {
-        return timeline.getKeyFrames()
+    public Optional<ObjectKeyFrame> getKeyFrame(int time, String tag) {
+//        return timeline.getKeyFrames()
+//                .stream()
+//                .filter(
+//                        kf -> kf.getName().startsWith(namePrefix)
+//                                && kf.getTime().toMillis() == time
+//                )
+//                .findFirst();
+        return interpolationDriver.getKeyFrames()
                 .stream()
                 .filter(
-                        kf -> kf.getName().startsWith(namePrefix)
-                                && kf.getTime().toMillis() == time
+                        kf -> kf.getTag().equals(tag) && kf.getTime() == time
                 )
                 .findFirst();
     }
 
-    private KeyFrame addKeyFrame(double value, int time, Interpolators interpolator, String namePrefix, WritableValue<Number> property) {
-        getKeyFrame(time, namePrefix).ifPresent(keyFrame -> timeline.getKeyFrames().remove(keyFrame));
+    public ObjectKeyFrame addKeyFrame(double value, int time, InterpolatorType interpolator, String tag) {
+        WritableValue<Number> prop = null;
+        switch (tag) {
+            case POSITION_X_KEYFRAME_NAME_TAG -> prop = positionX;
+            case POSITION_Y_KEYFRAME_NAME_TAG -> prop = positionY;
+            case SCALE_X_KEYFRAME_NAME_TAG -> prop = scaleX;
+            case SCALE_Y_KEYFRAME_NAME_TAG -> prop = scaleY;
+            case ROTATION_KEYFRAME_NAME_TAG -> prop = rotation;
+            case PIVOT_X_KEYFRAME_NAME_TAG -> prop = pivotX;
+            case PIVOT_Y_KEYFRAME_NAME_TAG -> prop = pivotY;
+        }
+        if (prop == null) {
+            throw new IllegalArgumentException("Unknown property");
+        }
+        return addKeyFrame(value, time, interpolator, tag, prop);
+    }
 
-        KeyFrame kf = new KeyFrame(
-                new Duration(time),
-                namePrefix + time,
-                new KeyValue(
-                        property,
-                        value,
-                        interpolator.getInterpolator()
-                )
+    private ObjectKeyFrame addKeyFrame(double value, int time, InterpolatorType interpolator, String tag, WritableValue<Number> property) {
+//        getKeyFrame(time, namePrefix).ifPresent(keyFrame -> timeline.getKeyFrames().remove(keyFrame));
+//
+//        KeyFrame kf = new KeyFrame(
+//                new Duration(time),
+//                namePrefix + time,
+//                new KeyValue(
+//                        property,
+//                        value,
+//                        interpolator.getInterpolator()
+//                )
+//        );
+//        addKeyFrame(kf);
+//        return kf;
+
+        getKeyFrame(time, tag).ifPresent(kf -> interpolationDriver.getKeyFrames().remove(kf));
+        ObjectKeyFrame kf = new ObjectKeyFrame(
+                time,
+                tag,
+                property,
+                value,
+                interpolator
         );
         addKeyFrame(kf);
         return kf;
     }
 
-    public KeyFrame addKeyFrame(double value, int time, Interpolators interpolator, String namePrefix) {
-        WritableValue<Number> prop = null;
-        switch (namePrefix) {
-            case POSITION_X_KEYFRAME_NAME_PREFIX -> prop = positionX;
-            case POSITION_Y_KEYFRAME_NAME_PREFIX -> prop = positionY;
-            case SCALE_X_KEYFRAME_NAME_PREFIX -> prop = scaleX;
-            case SCALE_Y_KEYFRAME_NAME_PREFIX -> prop = scaleY;
-            case ROTATION_KEYFRAME_NAME_PREFIX -> prop = rotation;
-            case PIVOT_X_KEYFRAME_NAME_PREFIX -> prop = pivotX;
-            case PIVOT_Y_KEYFRAME_NAME_PREFIX -> prop = pivotY;
-        }
-        if (prop == null) {
-            throw new IllegalArgumentException("Unknown property");
-        }
-        return addKeyFrame(value, time, interpolator, namePrefix, prop);
-    }
-
-    public void addKeyFrame(KeyFrame kf) {
-        timeline.getKeyFrames().add(kf);
+    public void addKeyFrame(ObjectKeyFrame kf) {
+        interpolationDriver.getKeyFrames().add(kf);
         changedKeyFrames = true;
         fireValueChangedEvent();
     }
 
-    public void removeKeyFrame(KeyFrame keyFrame) {
-        timeline.getKeyFrames().remove(keyFrame);
+    public void removeKeyFrame(ObjectKeyFrame kf) {
+        interpolationDriver.getKeyFrames().remove(kf);
         changedKeyFrames = true;
         fireValueChangedEvent();
     }
 
-    public static String getPrefixFromKeyFrameName(String name) {
-        return name.replaceAll("\\d", "");
-    }
+//    public static String getPrefixFromKeyFrameName(String name) {
+//        return name.replaceAll("\\d", "");
+//    }
 
-    public ObservableList<KeyFrame> getKeyFrames() {
-        return timeline.getKeyFrames();
+    public ObservableList<ObjectKeyFrame> getKeyFrames() {
+        return interpolationDriver.getKeyFrames();
     }
 
     public boolean isVisible(int time) {
@@ -404,12 +420,8 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         this.timelineLayer.set(timelineLayer);
     }
 
-    public Timeline getTimeline() {
-        return timeline;
-    }
-
-    public void setTimeline(Timeline timeline) {
-        this.timeline = timeline;
+    public KeyFramesInterpolationDriver getInterpolationDriver() {
+        return interpolationDriver;
     }
 
     public Shape getShape() {
@@ -537,31 +549,32 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         HittingObject that = (HittingObject) o;
-        return changedKeyFrames == that.changedKeyFrames && Objects.equals(getName(), that.getName()) && Objects.equals(getStartTime(), that.getStartTime()) && Objects.equals(getDuration(), that.getDuration()) && Objects.equals(getTimelineLayer(), that.getTimelineLayer()) && Objects.equals(getTimeline(), that.getTimeline()) && Objects.equals(getShape(), that.getShape()) && Objects.equals(getTime(), that.getTime()) && Objects.equals(getPositionX(), that.getPositionX()) && Objects.equals(getPositionY(), that.getPositionY()) && Objects.equals(getScaleX(), that.getScaleX()) && Objects.equals(getScaleY(), that.getScaleY()) && Objects.equals(getRotation(), that.getRotation()) && Objects.equals(getPivotX(), that.getPivotX()) && Objects.equals(getPivotY(), that.getPivotY());
+        return changedKeyFrames == that.changedKeyFrames && Objects.equals(getName(), that.getName()) && Objects.equals(getStartTime(), that.getStartTime()) && Objects.equals(getDuration(), that.getDuration()) && Objects.equals(getTimelineLayer(), that.getTimelineLayer()) && Objects.equals(getInterpolationDriver(), that.getInterpolationDriver()) && Objects.equals(getShape(), that.getShape()) && Objects.equals(isHelper, that.isHelper) && Objects.equals(getTime(), that.getTime()) && Objects.equals(getPositionX(), that.getPositionX()) && Objects.equals(getPositionY(), that.getPositionY()) && Objects.equals(getScaleX(), that.getScaleX()) && Objects.equals(getScaleY(), that.getScaleY()) && Objects.equals(getRotation(), that.getRotation()) && Objects.equals(getPivotX(), that.getPivotX()) && Objects.equals(getPivotY(), that.getPivotY());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getName(), getStartTime(), getDuration(), getTimelineLayer(), getTimeline(), getShape(), getTime(), getPositionX(), getPositionY(), getScaleX(), getScaleY(), getRotation(), getPivotX(), getPivotY(), changedKeyFrames);
+        return Objects.hash(getName(), getStartTime(), getDuration(), getTimelineLayer(), getInterpolationDriver(), getShape(), isHelper, getTime(), getPositionX(), getPositionY(), getScaleX(), getScaleY(), getRotation(), getPivotX(), getPivotY(), changedKeyFrames);
     }
 
     @Override
     public String toString() {
-        return "HittingObject{" +
-                "name=" + getName() +
-                ", startTime=" + getStartTime() +
-                ", duration=" + getDuration() +
-                ", timelineLayer=" + getTimelineLayer() +
-                ", timeline=" + Arrays.toString(getTimeline().getKeyFrames().toArray()) +
-                ", shape=" + getShape() +
-                ", time=" + getTime() +
-                ", positionX=" + getPositionX() +
-                ", positionY=" + getPositionY() +
-                ", scaleX=" + getScaleX() +
-                ", scaleY=" + getScaleY() +
-                ", rotation=" + getRotation() +
-                ", pivotX=" + getPivotX() +
-                ", pivotY=" + getPivotY() +
+        return "HittingObject{" + "name=" + name +
+                ", startTime=" + startTime +
+                ", duration=" + duration +
+                ", timelineLayer=" + timelineLayer +
+                ", interpolationDriver=" + interpolationDriver +
+                ", shape=" + shape +
+                ", isHelper=" + isHelper +
+                ", time=" + time +
+                ", positionX=" + positionX +
+                ", positionY=" + positionY +
+                ", scaleX=" + scaleX +
+                ", scaleY=" + scaleY +
+                ", rotation=" + rotation +
+                ", pivotX=" + pivotX +
+                ", pivotY=" + pivotY +
+                ", changedKeyFrames=" + changedKeyFrames +
                 '}';
     }
 }
