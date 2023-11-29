@@ -20,6 +20,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
     public static final String ROTATION_KEYFRAME_TAG = "rotation";
     public static final String PIVOT_X_KEYFRAME_TAG = "pivotX";
     public static final String PIVOT_Y_KEYFRAME_TAG = "pivotY";
+    public static final String HIGHLIGHT_KEYFRAME_TAG = "highlight";
 
     public static final String[] KEYFRAME_TAGS = new String[] {
             POSITION_X_KEYFRAME_TAG,
@@ -29,6 +30,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
             ROTATION_KEYFRAME_TAG,
             PIVOT_X_KEYFRAME_TAG,
             PIVOT_Y_KEYFRAME_TAG,
+            HIGHLIGHT_KEYFRAME_TAG,
     };
 
     private final StringProperty name;
@@ -37,7 +39,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
     private final IntegerProperty timelineLayer;
     private final KeyFramesInterpolationDriver interpolationDriver;
     private final ObjectProperty<Shape> shape;
-    private final BooleanProperty isHelper;
+    private final BooleanProperty isDecoration;
 
     private final IntegerProperty time;
     private final DoubleProperty positionX;
@@ -47,6 +49,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
     private final DoubleProperty rotation;
     private final DoubleProperty pivotX;
     private final DoubleProperty pivotY;
+    private final DoubleProperty highlight;
 
     private boolean changedKeyFrames = false;
 
@@ -148,7 +151,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         };
         this.shape.set(Shape.SQUARE);
 
-        this.isHelper = new BooleanPropertyBase() {
+        this.isDecoration = new BooleanPropertyBase() {
             @Override
             protected void invalidated() {
                 super.invalidated();
@@ -162,7 +165,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
             @Override
             public String getName() {
-                return "isHelper";
+                return "isDecoration";
             }
         };
 
@@ -204,6 +207,9 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
         this.pivotY = makeDoublePropertyWithName("pivotY");
         setPivotY(0.0);
+
+        this.highlight = makeDoublePropertyWithName("highlight");
+        setHighlight(0.0);
     }
 
     private DoublePropertyBase makeDoublePropertyWithName(String name) {
@@ -267,6 +273,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
             case ROTATION_KEYFRAME_TAG -> prop = rotation;
             case PIVOT_X_KEYFRAME_TAG -> prop = pivotX;
             case PIVOT_Y_KEYFRAME_TAG -> prop = pivotY;
+            case HIGHLIGHT_KEYFRAME_TAG -> prop = highlight;
         }
         if (prop == null) {
             throw new IllegalArgumentException("Unknown property");
@@ -306,7 +313,8 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
                     POSITION_Y_KEYFRAME_TAG,
                     ROTATION_KEYFRAME_TAG,
                     PIVOT_X_KEYFRAME_TAG,
-                    PIVOT_Y_KEYFRAME_TAG -> {
+                    PIVOT_Y_KEYFRAME_TAG,
+                    HIGHLIGHT_KEYFRAME_TAG -> {
                 return 0.0;
             }
             case SCALE_X_KEYFRAME_TAG,
@@ -401,16 +409,16 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         this.shape.set(shape);
     }
 
-    public boolean isHelper() {
-        return isHelper.get();
+    public boolean isDecoration() {
+        return isDecoration.get();
     }
 
-    public BooleanProperty isHelperProperty() {
-        return isHelper;
+    public BooleanProperty isDecorationProperty() {
+        return isDecoration;
     }
 
-    public void setIsHelper(boolean isHelper) {
-        this.isHelper.set(isHelper);
+    public void setIsDecoration(boolean isDecoration) {
+        this.isDecoration.set(isDecoration);
     }
 
     public int getTime() {
@@ -509,17 +517,29 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         this.pivotY.set(pivotY);
     }
 
+    public double getHighlight() {
+        return highlight.get();
+    }
+
+    public DoubleProperty highlightProperty() {
+        return highlight;
+    }
+
+    public void setHighlight(double highlight) {
+        this.highlight.set(highlight);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         HittingObject that = (HittingObject) o;
-        return changedKeyFrames == that.changedKeyFrames && Objects.equals(getName(), that.getName()) && Objects.equals(getStartTime(), that.getStartTime()) && Objects.equals(getDuration(), that.getDuration()) && Objects.equals(getTimelineLayer(), that.getTimelineLayer()) && Objects.equals(getInterpolationDriver(), that.getInterpolationDriver()) && Objects.equals(getShape(), that.getShape()) && Objects.equals(isHelper, that.isHelper) && Objects.equals(getTime(), that.getTime()) && Objects.equals(getPositionX(), that.getPositionX()) && Objects.equals(getPositionY(), that.getPositionY()) && Objects.equals(getScaleX(), that.getScaleX()) && Objects.equals(getScaleY(), that.getScaleY()) && Objects.equals(getRotation(), that.getRotation()) && Objects.equals(getPivotX(), that.getPivotX()) && Objects.equals(getPivotY(), that.getPivotY());
+        return changedKeyFrames == that.changedKeyFrames && Objects.equals(getName(), that.getName()) && Objects.equals(getStartTime(), that.getStartTime()) && Objects.equals(getDuration(), that.getDuration()) && Objects.equals(getTimelineLayer(), that.getTimelineLayer()) && Objects.equals(getInterpolationDriver(), that.getInterpolationDriver()) && Objects.equals(getShape(), that.getShape()) && Objects.equals(isDecoration, that.isDecoration) && Objects.equals(getTime(), that.getTime()) && Objects.equals(getPositionX(), that.getPositionX()) && Objects.equals(getPositionY(), that.getPositionY()) && Objects.equals(getScaleX(), that.getScaleX()) && Objects.equals(getScaleY(), that.getScaleY()) && Objects.equals(getRotation(), that.getRotation()) && Objects.equals(getPivotX(), that.getPivotX()) && Objects.equals(getPivotY(), that.getPivotY());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getName(), getStartTime(), getDuration(), getTimelineLayer(), getInterpolationDriver(), getShape(), isHelper, getTime(), getPositionX(), getPositionY(), getScaleX(), getScaleY(), getRotation(), getPivotX(), getPivotY(), changedKeyFrames);
+        return Objects.hash(getName(), getStartTime(), getDuration(), getTimelineLayer(), getInterpolationDriver(), getShape(), isDecoration, getTime(), getPositionX(), getPositionY(), getScaleX(), getScaleY(), getRotation(), getPivotX(), getPivotY(), changedKeyFrames);
     }
 
     @Override
@@ -530,7 +550,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
                 ", timelineLayer=" + timelineLayer +
                 ", interpolationDriver=" + interpolationDriver +
                 ", shape=" + shape +
-                ", isHelper=" + isHelper +
+                ", isDecoration=" + isDecoration +
                 ", time=" + time +
                 ", positionX=" + positionX +
                 ", positionY=" + positionY +

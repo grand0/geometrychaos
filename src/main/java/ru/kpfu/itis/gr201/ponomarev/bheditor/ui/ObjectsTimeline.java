@@ -280,7 +280,7 @@ public class ObjectsTimeline extends Pane {
                     );
                 }
                 copy.setShape(getSelectedObject().getShape());
-                copy.setIsHelper(getSelectedObject().isHelper());
+                copy.setIsDecoration(getSelectedObject().isDecoration());
                 GameObjectsManager.getInstance().addObject(copy);
                 setSelectedObject(copy);
             }
@@ -358,7 +358,7 @@ public class ObjectsTimeline extends Pane {
                         g.setStroke(Theme.PRIMARY.darker());
                         g.setLineWidth(1.0);
                     }
-                    if (ho.isHelper()) {
+                    if (ho.isDecoration()) {
                         fillColor = fillColor.deriveColor(0, 1, 1, 0.8);
                     }
                     g.setFill(fillColor);

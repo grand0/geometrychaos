@@ -92,7 +92,7 @@ public class GameField extends Pane {
                 Rectangle fieldRect = new Rectangle(0, 0, getWidth(), getHeight());
                 javafx.scene.shape.Shape visibleOnField = javafx.scene.shape.Shape.intersect(fieldRect, shape);
                 visibleOnField.setFill(null);
-                visibleOnField.setStroke(Theme.PRIMARY.darker());
+                visibleOnField.setStroke(Theme.SELECTED_OBJECT_OUTLINE);
                 visibleOnField.setStrokeWidth(3.0);
                 visibleOnField.setStrokeType(StrokeType.INSIDE);
                 visibleOnField.setStrokeLineCap(StrokeLineCap.BUTT);
@@ -159,8 +159,10 @@ public class GameField extends Pane {
             throw new IllegalArgumentException("Unknown shape.");
         }
         Color fillColor = Theme.PRIMARY;
-        if (obj.isHelper()) {
-            fillColor = fillColor.deriveColor(0, 1, 1, 0.5);
+        if (obj.getHighlight() > 0.0) { // make brighter
+            fillColor = fillColor.interpolate(Color.WHITE, obj.getHighlight());
+        } else if (obj.getHighlight() < 0.0) { // make transparent
+            fillColor = fillColor.deriveColor(0, 1, 1, 1 + obj.getHighlight());
         }
         shape.setFill(fillColor);
         shape.getTransforms().addAll(
@@ -205,8 +207,8 @@ public class GameField extends Pane {
         javafx.scene.shape.Shape cross = javafx.scene.shape.Shape.union(vCross, hCross);
         javafx.scene.shape.Shape crossWithLine = javafx.scene.shape.Shape.union(cross, pivotToCenter);
         javafx.scene.shape.Shape crossWithLineAndObjCenter = javafx.scene.shape.Shape.union(crossWithLine, shapeCenterCircle);
-        crossWithLineAndObjCenter.setFill(Theme.PRIMARY.darker());
-        crossWithLineAndObjCenter.setStroke(Theme.PRIMARY.darker());
+        crossWithLineAndObjCenter.setFill(Theme.SELECTED_OBJECT_OUTLINE);
+        crossWithLineAndObjCenter.setStroke(Theme.SELECTED_OBJECT_OUTLINE);
         crossWithLineAndObjCenter.setViewOrder(-Double.MAX_VALUE);
         return crossWithLineAndObjCenter;
     }

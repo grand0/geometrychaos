@@ -121,10 +121,11 @@ public class Main extends Application {
                 new KeyFramesTimeline("Rot", HittingObject.ROTATION_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
                 new KeyFramesTimeline("PivotX", HittingObject.PIVOT_X_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
                 new KeyFramesTimeline("PivotY", HittingObject.PIVOT_Y_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
+                new KeyFramesTimeline("Hghlgt", HittingObject.HIGHLIGHT_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
         };
         for (int i = 0; i < kfTimelines.length; i++) {
             KeyFramesTimeline kft = kfTimelines[i];
-            kft.setBackground(Background.fill(Theme.RAINBOW_START_COLOR.deriveColor(i * (360.0 / 7.0), 1, 1, 1)));
+            kft.setBackground(Background.fill(Theme.RAINBOW_START_COLOR.deriveColor(i * (360.0 / kfTimelines.length), 1, 1, 1)));
             kft.prefWidthProperty().bind(gameObjectSettingsBox.widthProperty());
             kft.selectedKeyFrameProperty().addListener(obs -> {
                 if (kft.getSelectedKeyFrame() != null) {

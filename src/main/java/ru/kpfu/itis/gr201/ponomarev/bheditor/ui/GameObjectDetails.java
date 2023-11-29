@@ -18,7 +18,7 @@ public class GameObjectDetails extends Pane {
     private final Spinner<Integer> startTimeSpinner;
     private final Spinner<Integer> durationSpinner;
     private final ComboBox<Shape> shapeComboBox;
-    private final CheckBox isHelperCheckBox;
+    private final CheckBox isDecorationCheckBox;
     private final GridPane gridPane;
 
     private final ObjectProperty<HittingObject> displayingObject = new ObjectPropertyBase<>() {
@@ -75,11 +75,11 @@ public class GameObjectDetails extends Pane {
             }
         });
 
-        isHelperCheckBox = new CheckBox();
-        isHelperCheckBox.selectedProperty().addListener(obs -> {
+        isDecorationCheckBox = new CheckBox();
+        isDecorationCheckBox.selectedProperty().addListener(obs -> {
             HittingObject obj = displayingObject.get();
             if (obj != null) {
-                obj.setIsHelper(isHelperCheckBox.isSelected());
+                obj.setIsDecoration(isDecorationCheckBox.isSelected());
             }
         });
 
@@ -91,7 +91,7 @@ public class GameObjectDetails extends Pane {
         gridPane.addRow(1, makeLabel("Start time"), startTimeSpinner);
         gridPane.addRow(2, makeLabel("Duration"), durationSpinner);
         gridPane.addRow(3, makeLabel("Shape"), shapeComboBox);
-        gridPane.addRow(4, makeLabel("Helper"), isHelperCheckBox);
+        gridPane.addRow(4, makeLabel("Decoration"), isDecorationCheckBox);
 
         getChildren().add(gridPane);
 
