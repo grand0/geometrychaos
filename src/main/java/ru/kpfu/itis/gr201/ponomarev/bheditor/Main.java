@@ -16,7 +16,7 @@ import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.*;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.GameObjectsManager;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.anim.ObjectKeyFrame;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.anim.ObjectKeyFrame;
 
 import java.util.Arrays;
 

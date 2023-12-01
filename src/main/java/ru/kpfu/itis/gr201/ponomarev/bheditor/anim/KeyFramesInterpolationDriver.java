@@ -1,4 +1,4 @@
-package ru.kpfu.itis.gr201.ponomarev.bheditor.util.anim;
+package ru.kpfu.itis.gr201.ponomarev.bheditor.anim;
 
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.IntegerProperty;

@@ -1,8 +1,9 @@
-package ru.kpfu.itis.gr201.ponomarev.bheditor.util.anim;
+package ru.kpfu.itis.gr201.ponomarev.bheditor.anim;
 
 import javafx.beans.property.*;
 import javafx.beans.value.*;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.InterpolatorType;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.randomizer.ValueRandomizer;
 
 import java.util.Objects;
 
@@ -12,10 +13,10 @@ public class ObjectKeyFrame extends ObjectPropertyBase<ObjectKeyFrame> {
     private final WritableValue<?> target;
     private final ObjectProperty<Object> endValue;
     private final ObjectProperty<InterpolatorType> interpolatorType;
-
+    private final ObjectProperty<ValueRandomizer> randomizer;
     private final KeyFrameType type;
 
-    public <T> ObjectKeyFrame(int time, String tag, WritableValue<T> target, T endValue, InterpolatorType interpolator) {
+    public <T> ObjectKeyFrame(int time, String tag, WritableValue<T> target, T endValue, InterpolatorType interpolator, ValueRandomizer randomizer) {
         this.target = target;
 
         this.time = new IntegerPropertyBase() {
@@ -70,6 +71,19 @@ public class ObjectKeyFrame extends ObjectPropertyBase<ObjectKeyFrame> {
         };
         this.interpolatorType.set(interpolator);
 
+        this.randomizer = new ObjectPropertyBase<>() {
+            @Override
+            public Object getBean() {
+                return null;
+            }
+
+            @Override
+            public String getName() {
+                return "randomizer";
+            }
+        };
+        this.randomizer.set(randomizer);
+
         this.type =
                 (target instanceof WritableNumberValue) ?
                     (target instanceof WritableIntegerValue) ? KeyFrameType.INTEGER
@@ -79,6 +93,12 @@ public class ObjectKeyFrame extends ObjectPropertyBase<ObjectKeyFrame> {
                     : KeyFrameType.OBJECT
                 : (target instanceof WritableBooleanValue) ? KeyFrameType.BOOLEAN
                 : KeyFrameType.OBJECT;
+    }
+
+    public void randomize() {
+        if (getRandomizer() != null) {
+            setEndValue(getRandomizer().randomize());
+        }
     }
 
     @Override
@@ -141,6 +161,18 @@ public class ObjectKeyFrame extends ObjectPropertyBase<ObjectKeyFrame> {
 
     public void setInterpolatorType(InterpolatorType interpolatorType) {
         this.interpolatorType.set(interpolatorType);
+    }
+
+    public ValueRandomizer getRandomizer() {
+        return randomizer.get();
+    }
+
+    public ObjectProperty<ValueRandomizer> randomizerProperty() {
+        return randomizer;
+    }
+
+    public void setRandomizer(ValueRandomizer randomizer) {
+        this.randomizer.set(randomizer);
     }
 
     @Override

@@ -7,5 +7,7 @@ module ru.kpfu.itis.gr201.ponomarev.bheditor {
     exports ru.kpfu.itis.gr201.ponomarev.bheditor.ui;
     exports ru.kpfu.itis.gr201.ponomarev.bheditor.util;
     exports ru.kpfu.itis.gr201.ponomarev.bheditor.util.converter;
-    exports ru.kpfu.itis.gr201.ponomarev.bheditor.util.anim;
+    exports ru.kpfu.itis.gr201.ponomarev.bheditor.anim;
+    exports ru.kpfu.itis.gr201.ponomarev.bheditor.util.randomizer;
+    exports ru.kpfu.itis.gr201.ponomarev.bheditor.util.randomizer.impl;
 }

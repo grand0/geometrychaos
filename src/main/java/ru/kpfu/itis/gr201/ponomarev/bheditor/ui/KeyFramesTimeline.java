@@ -13,9 +13,10 @@ import javafx.scene.text.TextAlignment;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.InterpolatorType;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.anim.ObjectKeyFrame;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.anim.ObjectKeyFrame;
 
 import java.util.List;
+import java.util.Optional;
 
 public class KeyFramesTimeline extends Pane {
 
@@ -99,12 +100,19 @@ public class KeyFramesTimeline extends Pane {
         });
         setOnMouseClicked(event -> {
             if (hoveringAddButton && currentObject.get() != null) {
-                currentObject.get().addKeyFrame(
-                        HittingObject.getDefaultValueForTag(keyFrameTag),
-                        currentObject.get().getTime(),
-                        InterpolatorType.LINEAR,
-                        keyFrameTag
-                );
+                Optional<ObjectKeyFrame> opt = currentObject.get().getKeyFrame(currentObject.get().getTime(), keyFrameTag);
+                if (opt.isPresent()) {
+                    setLostKeyFrameFocus(false);
+                    setSelectedKeyFrame(opt.get());
+                } else {
+                    currentObject.get().addKeyFrame(
+                            HittingObject.getDefaultValueForTag(keyFrameTag),
+                            currentObject.get().getTime(),
+                            InterpolatorType.LINEAR,
+                            keyFrameTag,
+                            null
+                    );
+                }
             } else {
                 boolean selected = false;
                 for (ObjectKeyFrame kf : getKeyFrames()) {

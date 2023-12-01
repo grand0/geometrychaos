@@ -122,6 +122,7 @@ public class GameObjectDetails extends Pane {
         startTimeSpinner.getEditor().setText(String.valueOf(obj.getStartTime()));
         durationSpinner.getEditor().setText(String.valueOf(obj.getDuration()));
         shapeComboBox.setValue(obj.getShape());
+        isDecorationCheckBox.setSelected(obj.isDecoration());
     }
 
     private Label makeLabel(String text) {

@@ -5,8 +5,9 @@ import javafx.beans.value.WritableValue;
 import javafx.collections.ObservableList;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.ObjectsTimeline;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.InterpolatorType;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.anim.KeyFramesInterpolationDriver;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.anim.ObjectKeyFrame;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.anim.KeyFramesInterpolationDriver;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.anim.ObjectKeyFrame;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.randomizer.ValueRandomizer;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -238,7 +239,8 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
                     getDefaultValueForTag(tag),
                     0,
                     InterpolatorType.INSTANT,
-                    tag
+                    tag,
+                    null
             );
         }
     }
@@ -263,7 +265,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
                 .findFirst();
     }
 
-    public ObjectKeyFrame addKeyFrame(Object value, int time, InterpolatorType interpolator, String tag) {
+    public ObjectKeyFrame addKeyFrame(Object value, int time, InterpolatorType interpolator, String tag, ValueRandomizer randomizer) {
         WritableValue<?> prop = null;
         switch (tag) {
             case POSITION_X_KEYFRAME_TAG -> prop = positionX;
@@ -278,24 +280,26 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         if (prop == null) {
             throw new IllegalArgumentException("Unknown property");
         }
-        return addKeyFrame(value, time, interpolator, tag, prop);
+        return addKeyFrame(value, time, interpolator, tag, randomizer, prop);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private ObjectKeyFrame addKeyFrame(Object value, int time, InterpolatorType interpolator, String tag, WritableValue property) {
+    private ObjectKeyFrame addKeyFrame(Object value, int time, InterpolatorType interpolator, String tag, ValueRandomizer randomizer, WritableValue property) {
         getKeyFrame(time, tag).ifPresent(kf -> interpolationDriver.getKeyFrames().remove(kf));
         ObjectKeyFrame kf = new ObjectKeyFrame(
                 time,
                 tag,
                 property,
                 value,
-                interpolator
+                interpolator,
+                randomizer
         );
         addKeyFrame(kf);
         return kf;
     }
 
     public void addKeyFrame(ObjectKeyFrame kf) {
+        kf.randomize();
         interpolationDriver.getKeyFrames().add(kf);
         changedKeyFrames = true;
         fireValueChangedEvent();

@@ -7,14 +7,20 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
+import javafx.util.StringConverter;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.anim.KeyFrameType;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.util.anim.ObjectKeyFrame;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.anim.KeyFrameType;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.anim.ObjectKeyFrame;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.InterpolatorType;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.converter.DoubleStringConverter;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.converter.InterpolatorsStringConverter;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.randomizer.DoubleValueRandomizer;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.randomizer.ValueRandomizer;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.randomizer.impl.DiscreteDoubleValueRandomizer;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.randomizer.impl.LinearDoubleValueRandomizer;
 
+import java.util.ArrayList;
 import java.util.function.Consumer;
 
 public class KeyFrameEditor extends Pane {
@@ -27,7 +33,8 @@ public class KeyFrameEditor extends Pane {
     private final ObjectProperty<ObjectKeyFrame> keyFrame;
     private final ObjectProperty<HittingObject> kfParent;
 
-    private final Consumer<Object> keyFrameChanger;
+    private final Consumer<Object> keyFrameValueChanger;
+    private final Consumer<ValueRandomizer> keyFrameRandomizerChanger;
 
     private boolean listenToKeyFrameChanges = true;
 
@@ -72,17 +79,29 @@ public class KeyFrameEditor extends Pane {
                         selectedKeyFrame,
                         kf.getEndValue(),
                         timeSpinner.getValue(),
-                        kf.getInterpolatorType()
+                        kf.getInterpolatorType(),
+                        kf.getRandomizer()
                 );
             }
         });
 
-        keyFrameChanger = (val) -> {
+        keyFrameValueChanger = (val) -> {
             changeKeyFrame(
                     selectedKeyFrame,
                     val,
                     keyFrame.get().getTime(),
-                    keyFrame.get().getInterpolatorType()
+                    keyFrame.get().getInterpolatorType(),
+                    keyFrame.get().getRandomizer()
+            );
+        };
+
+        keyFrameRandomizerChanger = (randomizer) -> {
+            changeKeyFrame(
+                    selectedKeyFrame,
+                    keyFrame.get().getEndValue(),
+                    keyFrame.get().getTime(),
+                    keyFrame.get().getInterpolatorType(),
+                    randomizer
             );
         };
 
@@ -96,7 +115,8 @@ public class KeyFrameEditor extends Pane {
                         selectedKeyFrame,
                         kf.getEndValue(),
                         kf.getTime(),
-                        interpolatorComboBox.getValue()
+                        interpolatorComboBox.getValue(),
+                        kf.getRandomizer()
                 );
             }
         });
@@ -110,7 +130,7 @@ public class KeyFrameEditor extends Pane {
         redraw();
     }
 
-    private void changeKeyFrame(ObjectProperty<ObjectKeyFrame> selectedKeyFrame, Object value, int time, InterpolatorType interpolator) {
+    private void changeKeyFrame(ObjectProperty<ObjectKeyFrame> selectedKeyFrame, Object value, int time, InterpolatorType interpolator, ValueRandomizer randomizer) {
         listenToKeyFrameChanges = false;
         ObjectKeyFrame kf = keyFrame.get();
         HittingObject obj = kfParent.get();
@@ -120,13 +140,15 @@ public class KeyFrameEditor extends Pane {
                     value,
                     time,
                     interpolator,
-                    kf.getTag()
+                    kf.getTag(),
+                    randomizer
             );
             keyFrame.unbind();
             keyFrame.set(kf);
             keyFrame.bind(selectedKeyFrame);
         }
         listenToKeyFrameChanges = true;
+        redraw();
     }
 
     private void redraw() {
@@ -141,10 +163,100 @@ public class KeyFrameEditor extends Pane {
         Node valueSelector = makeValueSelector(keyFrame.get().getType(), keyFrame.get().getEndValue());
         interpolatorComboBox.setValue(keyFrame.get().getInterpolatorType());
 
+        boolean showRandomizer = true;
+        ComboBox<ValueRandomizer> randomizerComboBox = new ComboBox<>();
+        ArrayList<Node> randomizerPropertiesNodes = new ArrayList<>();
+        ValueRandomizer originalRandomizer = keyFrame.get().getRandomizer();
+        switch (keyFrame.get().getType()) {
+            case DOUBLE -> {
+                DoubleValueRandomizer originalDoubleRandomizer = (DoubleValueRandomizer) originalRandomizer;
+                LinearDoubleValueRandomizer linear = null;
+                DiscreteDoubleValueRandomizer discrete = null;
+                ValueRandomizer valueToSet = null;
+                if (originalDoubleRandomizer instanceof LinearDoubleValueRandomizer) {
+                    linear = (LinearDoubleValueRandomizer) originalDoubleRandomizer;
+                    valueToSet = linear;
+                    Spinner<Double> startValueSpinner = makeDoubleSpinner(linear.getStartValue());
+                    startValueSpinner.valueProperty().addListener(obs -> {
+                        keyFrameRandomizerChanger.accept(
+                                new LinearDoubleValueRandomizer(startValueSpinner.getValue(), originalDoubleRandomizer.getEndValue())
+                        );
+                    });
+                    randomizerPropertiesNodes.add(startValueSpinner);
+                    Spinner<Double> endValueSpinner = makeDoubleSpinner(linear.getEndValue());
+                    endValueSpinner.valueProperty().addListener(obs -> {
+                        keyFrameRandomizerChanger.accept(
+                                new LinearDoubleValueRandomizer(originalDoubleRandomizer.getStartValue(), endValueSpinner.getValue())
+                        );
+                    });
+                    randomizerPropertiesNodes.add(endValueSpinner);
+                } else if (originalDoubleRandomizer instanceof DiscreteDoubleValueRandomizer) {
+                    discrete = (DiscreteDoubleValueRandomizer) originalDoubleRandomizer;
+                    valueToSet = discrete;
+                    Spinner<Double> startValueSpinner = makeDoubleSpinner(discrete.getStartValue());
+                    DiscreteDoubleValueRandomizer finalDiscrete = discrete;
+                    startValueSpinner.valueProperty().addListener(obs -> {
+                        keyFrameRandomizerChanger.accept(
+                                new DiscreteDoubleValueRandomizer(startValueSpinner.getValue(), originalDoubleRandomizer.getEndValue(), finalDiscrete.getStep())
+                        );
+                    });
+                    randomizerPropertiesNodes.add(startValueSpinner);
+                    Spinner<Double> endValueSpinner = makeDoubleSpinner(discrete.getEndValue());
+                    endValueSpinner.valueProperty().addListener(obs -> {
+                        keyFrameRandomizerChanger.accept(
+                                new DiscreteDoubleValueRandomizer(originalDoubleRandomizer.getStartValue(), endValueSpinner.getValue(), finalDiscrete.getStep())
+                        );
+                    });
+                    randomizerPropertiesNodes.add(endValueSpinner);
+                    Spinner<Double> stepSpinner = makeDoubleSpinner(discrete.getStep());
+                    stepSpinner.valueProperty().addListener(obs -> {
+                        keyFrameRandomizerChanger.accept(
+                                new DiscreteDoubleValueRandomizer(originalDoubleRandomizer.getStartValue(), originalDoubleRandomizer.getEndValue(), stepSpinner.getValue())
+                        );
+                    });
+                    randomizerPropertiesNodes.add(stepSpinner);
+                }
+                if (linear == null) {
+                    linear = new LinearDoubleValueRandomizer(0, 1);
+                }
+                if (discrete == null) {
+                    discrete = new DiscreteDoubleValueRandomizer(0, 1, 0.1);
+                }
+                randomizerComboBox.setItems(FXCollections.observableArrayList(
+                        null,
+                        linear,
+                        discrete
+                ));
+                randomizerComboBox.setValue(valueToSet);
+                randomizerComboBox.setConverter(new StringConverter<>() {
+                    @Override
+                    public String toString(ValueRandomizer object) {
+                        return object == null ? "No randomizer" : object.getName();
+                    }
+
+                    @Override
+                    public ValueRandomizer fromString(String string) {
+                        // we can skip this because combobox isn't editable
+                        throw new RuntimeException("Not implemented");
+                    }
+                });
+            }
+            default -> showRandomizer = false;
+        }
+
         gridPane.getChildren().clear();
         gridPane.addRow(0, makeLabel("Time"), timeSpinner);
         gridPane.addRow(1, makeLabel("Value"), valueSelector);
         gridPane.addRow(2, makeLabel("Interpolator"), interpolatorComboBox);
+        if (showRandomizer) {
+            randomizerComboBox.valueProperty().addListener(obs -> {
+                keyFrameRandomizerChanger.accept(randomizerComboBox.getValue());
+            });
+            gridPane.addRow(3, makeLabel("Randomizer"), randomizerComboBox);
+            for (Node node : randomizerPropertiesNodes) {
+                gridPane.addRow(4, node);
+            }
+        }
     }
 
     private Node makeValueSelector(KeyFrameType type, Object value) {
@@ -155,7 +267,7 @@ public class KeyFrameEditor extends Pane {
                 checkBox.selectedProperty().addListener(obs -> {
                     ObjectKeyFrame kf = keyFrame.get();
                     if (kf != null && !kf.getEndValue().equals(checkBox.isSelected())) {
-                        keyFrameChanger.accept(checkBox.isSelected());
+                        keyFrameValueChanger.accept(checkBox.isSelected());
                     }
                 });
                 return checkBox;
@@ -166,7 +278,7 @@ public class KeyFrameEditor extends Pane {
                 spinner.valueProperty().addListener(obs -> {
                     ObjectKeyFrame kf = keyFrame.get();
                     if (kf != null && !kf.getEndValue().equals(spinner.getValue())) {
-                        keyFrameChanger.accept(spinner.getValue());
+                        keyFrameValueChanger.accept(spinner.getValue());
                     }
                 });
                 return spinner;
@@ -198,7 +310,7 @@ public class KeyFrameEditor extends Pane {
                 spinner.valueProperty().addListener(obs -> {
                     ObjectKeyFrame kf = keyFrame.get();
                     if (kf != null && !kf.getEndValue().equals(spinner.getValue())) {
-                        keyFrameChanger.accept(spinner.getValue());
+                        keyFrameValueChanger.accept(spinner.getValue());
                     }
                 });
                 return spinner;
@@ -230,22 +342,17 @@ public class KeyFrameEditor extends Pane {
                 spinner.valueProperty().addListener(obs -> {
                     ObjectKeyFrame kf = keyFrame.get();
                     if (kf != null && !kf.getEndValue().equals(spinner.getValue())) {
-                        keyFrameChanger.accept(spinner.getValue());
+                        keyFrameValueChanger.accept(spinner.getValue());
                     }
                 });
                 return spinner;
             }
             case DOUBLE -> {
-                SpinnerValueFactory.DoubleSpinnerValueFactory valueFactory = new SpinnerValueFactory.DoubleSpinnerValueFactory(
-                        -Double.MAX_VALUE, Double.MAX_VALUE, (Double) value
-                );
-                valueFactory.setConverter(new DoubleStringConverter());
-                Spinner<Double> spinner = new Spinner<>(valueFactory);
-                spinner.setEditable(true);
+                Spinner<Double> spinner = makeDoubleSpinner((Double) value);
                 spinner.valueProperty().addListener(obs -> {
                     ObjectKeyFrame kf = keyFrame.get();
                     if (kf != null && !kf.getEndValue().equals(spinner.getValue())) {
-                        keyFrameChanger.accept(spinner.getValue());
+                        keyFrameValueChanger.accept(spinner.getValue());
                     }
                 });
                 return spinner;
@@ -256,6 +363,16 @@ public class KeyFrameEditor extends Pane {
             }
         }
         throw new RuntimeException("Unknown type.");
+    }
+
+    private Spinner<Double> makeDoubleSpinner(double initialValue) {
+        SpinnerValueFactory.DoubleSpinnerValueFactory valueFactory = new SpinnerValueFactory.DoubleSpinnerValueFactory(
+                -Double.MAX_VALUE, Double.MAX_VALUE, initialValue
+        );
+        valueFactory.setConverter(new DoubleStringConverter());
+        Spinner<Double> spinner = new Spinner<>(valueFactory);
+        spinner.setEditable(true);
+        return spinner;
     }
 
     private Label makeLabel(String text) {
