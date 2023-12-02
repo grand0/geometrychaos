@@ -9,16 +9,27 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
 import javafx.scene.layout.*;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.audio.AudioSamples;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.*;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.GameObjectsManager;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.dialog.OpenAudioDialog;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.anim.ObjectKeyFrame;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import java.io.File;
 import java.util.Arrays;
+import java.util.Optional;
 
 public class Main extends Application {
 
@@ -29,7 +40,49 @@ public class Main extends Application {
     public void start(Stage primaryStage) {
         BorderPane root = new BorderPane();
 
+        ObjectProperty<AudioSamples> audioSamples = new ObjectPropertyBase<>() {
+            @Override
+            public Object getBean() {
+                return null;
+            }
+
+            @Override
+            public String getName() {
+                return "audioSamples";
+            }
+        };
+        ObjectProperty<MediaPlayer> mediaPlayer = new ObjectPropertyBase<>() {
+            @Override
+            public Object getBean() {
+                return null;
+            }
+
+            @Override
+            public String getName() {
+                return "mediaPlayer";
+            }
+        };
+
+        MenuItem openAudioMenuItem = new MenuItem("Open...");
+        openAudioMenuItem.setOnAction(event -> {
+            OpenAudioDialog dialog = new OpenAudioDialog();
+            dialog.setOwner(primaryStage);
+            Optional<File> opt = dialog.showAndWait();
+            opt.ifPresent(file -> {
+                try (AudioInputStream ais = AudioSystem.getAudioInputStream(file)) {
+                    audioSamples.set(new AudioSamples(ais));
+                    mediaPlayer.set(new MediaPlayer(new Media(file.toURI().toString())));
+                } catch (Exception e) {
+                    audioSamples.set(null);
+                    mediaPlayer.set(null);
+                }
+            });
+        });
+        Menu audioMenu = new Menu("Audio", null, openAudioMenuItem);
+        MenuBar menuBar = new MenuBar(audioMenu);
+
         ObjectsTimeline objectsTimeline = new ObjectsTimeline();
+        objectsTimeline.audioSamplesProperty().bind(audioSamples);
 
         Timeline cursorPositionTimeline = new Timeline(
                 new KeyFrame(
@@ -49,18 +102,34 @@ public class Main extends Application {
         objectsTimelineControls.setPlayPauseListener((playing) -> {
             if (!playing) {
                 cursorPositionTimeline.pause();
+                if (mediaPlayer.get() != null) {
+                    mediaPlayer.get().pause();
+                }
             } else {
+                Duration start = new Duration(objectsTimeline.getCursorPosition());
                 cursorPositionTimeline.stop();
                 cursorPositionTimeline.getKeyFrames().remove(1);
                 cursorPositionTimeline.getKeyFrames().add(getEndKeyFrame(objectsTimeline));
-                cursorPositionTimeline.playFrom(new Duration(objectsTimeline.getCursorPosition()));
+                cursorPositionTimeline.playFrom(start);
+                if (mediaPlayer.get() != null) {
+                    mediaPlayer.get().setStartTime(start);
+                    mediaPlayer.get().play();
+                }
             }
         });
         objectsTimelineControls.setStopListener(() -> {
             cursorPositionTimeline.stop();
             objectsTimeline.setCursorPosition(0);
+            if (mediaPlayer.get() != null) {
+                mediaPlayer.get().stop();
+            }
         });
-        cursorPositionTimeline.setOnFinished(event -> objectsTimelineControls.setPlaying(false));
+        cursorPositionTimeline.setOnFinished(event -> {
+            objectsTimelineControls.setPlaying(false);
+            if (mediaPlayer.get() != null) {
+                mediaPlayer.get().pause();
+            }
+        });
 
         objectsTimeline.prefWidthProperty().bind(primaryStage.widthProperty());
 
@@ -161,6 +230,7 @@ public class Main extends Application {
         gameObjectSettingsBox.getChildren().addAll(kfTimelines);
         gameObjectSettingsBox.getChildren().add(keyFrameEditor);
 
+        root.setTop(menuBar);
         root.setCenter(gamePane);
         root.setBottom(timelinePanel);
         root.setRight(gameObjectSettingsBox);

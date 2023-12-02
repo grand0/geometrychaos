@@ -7,18 +7,20 @@ import javafx.scene.Cursor;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.audio.AudioSamples;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.GameObjectsManager;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.dialog.MassCopyDialog;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.anim.ObjectKeyFrame;
 
 import java.util.Comparator;
 import java.util.Optional;
 
-public class ObjectsTimeline extends Pane {
+public class ObjectsTimeline extends StackPane {
 
     public final static int LAYERS_COUNT = 10;
 
@@ -29,12 +31,14 @@ public class ObjectsTimeline extends Pane {
     private final static double TIMELINE_CURSOR_SNAP_TOLERANCE = 10;
 
     private final Canvas canvas;
+    private final Canvas waveformCanvas;
 
     private final IntegerProperty visualMillisOffset = new IntegerPropertyBase() {
         @Override
         protected void invalidated() {
             super.invalidated();
             redraw();
+            drawWaveform();
         }
 
         @Override
@@ -52,6 +56,7 @@ public class ObjectsTimeline extends Pane {
         protected void invalidated() {
             super.invalidated();
             redraw();
+            drawWaveform();
         }
 
         @Override
@@ -105,15 +110,43 @@ public class ObjectsTimeline extends Pane {
         }
     };
 
+    private final ObjectProperty<AudioSamples> audioSamples = new ObjectPropertyBase<>() {
+        @Override
+        protected void invalidated() {
+            super.invalidated();
+            drawWaveform();
+        }
+
+        @Override
+        public Object getBean() {
+            return null;
+        }
+
+        @Override
+        public String getName() {
+            return "audioSamples";
+        }
+    };
+
     public ObjectsTimeline() {
         this.canvas = new Canvas();
         this.canvas.widthProperty().bind(widthProperty());
         this.canvas.heightProperty().bind(heightProperty());
 
-        widthProperty().addListener(obs -> redraw());
-        heightProperty().addListener(obs -> redraw());
+        this.waveformCanvas = new Canvas();
+        this.waveformCanvas.widthProperty().bind(widthProperty());
+        this.waveformCanvas.heightProperty().bind(heightProperty());
 
-        getChildren().add(canvas);
+        widthProperty().addListener(obs -> {
+            redraw();
+            drawWaveform();
+        });
+        heightProperty().addListener(obs -> {
+            redraw();
+            drawWaveform();
+        });
+
+        getChildren().addAll(waveformCanvas, canvas);
 
         setMinHeight(TIMELINE_LAYER_HEIGHT * LAYERS_COUNT + TIMELINE_TIME_AXIS_HEIGHT);
 
@@ -347,9 +380,9 @@ public class ObjectsTimeline extends Pane {
         GraphicsContext g = canvas.getGraphicsContext2D();
 
         g.setFill(Theme.BACKGROUND);
-        g.fillRect(0, 0, getWidth(), getHeight());
+        g.clearRect(0, 0, getWidth(), getHeight());
 
-        g.setFill(Theme.BACKGROUND.brighter());
+        g.setFill(Theme.BACKGROUND.brighter().deriveColor(0, 1, 1, 0.5));
         for (int i = 1; i < LAYERS_COUNT; i += 2) {
             g.fillRect(0, TIMELINE_TIME_AXIS_HEIGHT + TIMELINE_LAYER_HEIGHT * i, getWidth(), TIMELINE_LAYER_HEIGHT);
         }
@@ -449,6 +482,35 @@ public class ObjectsTimeline extends Pane {
         );
     }
 
+    private void drawWaveform() {
+        if (getAudioSamples() == null) {
+            return;
+        }
+
+        AudioSamples samples = getAudioSamples();
+
+        GraphicsContext g = waveformCanvas.getGraphicsContext2D();
+        g.clearRect(0, 0, getWidth(), getHeight());
+
+        double frameDuration = 1000.0 / samples.getRate();
+        double framePx = msToPx(frameDuration);
+        int startIndex = (int) (visualMillisOffset.get() / frameDuration);
+        g.setStroke(Theme.BACKGROUND.brighter().brighter());
+        g.beginPath();
+        for (int i = startIndex; i < samples.getLength() && framePx * (i - startIndex) < getWidth(); i += (int) Math.max(5, (10 * (zoom.get()) * zoom.get()))) {
+            int sample = samples.getSample(i, 0);
+            double y = getHeight() - (double) (sample - samples.getMin()) / (samples.getMax() - samples.getMin()) * getHeight();
+            double x = framePx * (i - startIndex);
+            if (i == startIndex) {
+                g.appendSVGPath("M" + x + "," + y);
+            } else {
+                g.appendSVGPath("L" + x + "," + y);
+            }
+        }
+        g.stroke();
+        g.closePath();
+    }
+
     public Duration getTotalDuration() {
         HittingObject lastObj = GameObjectsManager.getInstance().getObjects().stream()
                 .max(Comparator.comparingInt(HittingObject::getEndTime))
@@ -481,11 +543,23 @@ public class ObjectsTimeline extends Pane {
         this.selectedObject.set(selectedObject);
     }
 
+    public AudioSamples getAudioSamples() {
+        return audioSamples.get();
+    }
+
+    public ObjectProperty<AudioSamples> audioSamplesProperty() {
+        return audioSamples;
+    }
+
+    public void setAudioSamples(AudioSamples audioSamples) {
+        this.audioSamples.set(audioSamples);
+    }
+
     private int pxToMs(double px) {
         return (int) (px / pxPerMs());
     }
 
-    private double msToPx(int ms) {
+    private double msToPx(double ms) {
         return pxPerMs() * ms;
     }
 

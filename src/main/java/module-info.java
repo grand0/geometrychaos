@@ -1,5 +1,7 @@
 module ru.kpfu.itis.gr201.ponomarev.bheditor {
     requires javafx.controls;
+    requires javafx.media;
+    requires java.desktop;
 
 
     exports ru.kpfu.itis.gr201.ponomarev.bheditor;
@@ -10,4 +12,6 @@ module ru.kpfu.itis.gr201.ponomarev.bheditor {
     exports ru.kpfu.itis.gr201.ponomarev.bheditor.anim;
     exports ru.kpfu.itis.gr201.ponomarev.bheditor.util.randomizer;
     exports ru.kpfu.itis.gr201.ponomarev.bheditor.util.randomizer.impl;
+    exports ru.kpfu.itis.gr201.ponomarev.bheditor.ui.dialog;
+    exports ru.kpfu.itis.gr201.ponomarev.bheditor.audio;
 }

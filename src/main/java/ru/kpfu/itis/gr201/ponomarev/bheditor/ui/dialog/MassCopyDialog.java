@@ -1,4 +1,4 @@
-package ru.kpfu.itis.gr201.ponomarev.bheditor.ui;
+package ru.kpfu.itis.gr201.ponomarev.bheditor.ui.dialog;
 
 import javafx.application.Platform;
 import javafx.geometry.Insets;
