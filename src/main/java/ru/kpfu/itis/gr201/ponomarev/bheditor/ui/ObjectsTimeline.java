@@ -7,7 +7,7 @@ import javafx.scene.Cursor;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.audio.AudioSamples;
@@ -20,7 +20,7 @@ import ru.kpfu.itis.gr201.ponomarev.bheditor.anim.ObjectKeyFrame;
 import java.util.Comparator;
 import java.util.Optional;
 
-public class ObjectsTimeline extends StackPane {
+public class ObjectsTimeline extends Pane {
 
     public final static int LAYERS_COUNT = 10;
 
@@ -497,7 +497,7 @@ public class ObjectsTimeline extends StackPane {
         int startIndex = (int) (visualMillisOffset.get() / frameDuration);
         g.setStroke(Theme.BACKGROUND.brighter().brighter());
         g.beginPath();
-        for (int i = startIndex; i < samples.getLength() && framePx * (i - startIndex) < getWidth(); i += (int) Math.max(5, (10 * (zoom.get()) * zoom.get()))) {
+        for (int i = startIndex; i < samples.getLength() && framePx * (i - startIndex) < getWidth(); i += (int) Math.max(5, 10 * zoom.get())) {
             int sample = samples.getSample(i, 0);
             double y = getHeight() - (double) (sample - samples.getMin()) / (samples.getMax() - samples.getMin()) * getHeight();
             double x = framePx * (i - startIndex);

@@ -164,10 +164,12 @@ public class GameField extends Pane {
         } else if (obj.getHighlight() < 0.0) { // make transparent
             fillColor = fillColor.deriveColor(0, 1, 1, 1 + obj.getHighlight());
         }
+        double scaledPivotX = obj.getPivotX() * scalingFactor;
+        double scaledPivotY = obj.getPivotY() * scalingFactor;
         shape.setFill(fillColor);
         shape.getTransforms().addAll(
-                new Rotate(obj.getRotation(), shapeCenterOnScreenX + obj.getPivotX(), shapeCenterOnScreenY + obj.getPivotY()),
-                new Scale(obj.getScaleX(), obj.getScaleY(), shapeCenterOnScreenX + obj.getPivotX(), shapeCenterOnScreenY + obj.getPivotY())
+                new Rotate(obj.getRotation(), shapeCenterOnScreenX + scaledPivotX, shapeCenterOnScreenY + scaledPivotY),
+                new Scale(obj.getScaleX(), obj.getScaleY(), shapeCenterOnScreenX + scaledPivotX, shapeCenterOnScreenY + scaledPivotY)
         );
         return shape;
     }
@@ -176,8 +178,8 @@ public class GameField extends Pane {
         double scalingFactor = getWidth() / FIELD_WIDTH;
         double objCenterOnScreenBeforeTransformX = (obj.getPositionX() * scalingFactor) + getWidth() / 2;
         double objCenterOnScreenBeforeTransformY = (obj.getPositionY() * scalingFactor) + getHeight() / 2;
-        double pivotX = objCenterOnScreenBeforeTransformX + obj.getPivotX();
-        double pivotY = objCenterOnScreenBeforeTransformY + obj.getPivotY();
+        double pivotX = objCenterOnScreenBeforeTransformX + obj.getPivotX() * scalingFactor;
+        double pivotY = objCenterOnScreenBeforeTransformY + obj.getPivotY() * scalingFactor;
         Point2D actualShapeCenterOnScreen = shape.getLocalToParentTransform().transform(objCenterOnScreenBeforeTransformX, objCenterOnScreenBeforeTransformY);
         Line vCross = new Line(
                 pivotX,

@@ -21,7 +21,9 @@ public class MassCopyDialog extends Dialog<MassCopyDialog.MassCopyIntent> {
         gridPane.setPadding(new Insets(20));
 
         Spinner<Integer> countSpinner = new Spinner<>(1, Integer.MAX_VALUE, 10);
+        countSpinner.setEditable(true);
         Spinner<Integer> intervalSpinner = new Spinner<>(1, Integer.MAX_VALUE, 100);
+        intervalSpinner.setEditable(true);
 
         gridPane.addRow(0, new Label("Count"), countSpinner);
         gridPane.addRow(1, new Label("Interval"), intervalSpinner);
