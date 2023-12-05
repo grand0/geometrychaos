@@ -22,7 +22,8 @@ import java.util.*;
 
 public class ObjectsTimeline extends Pane {
 
-    public final static int LAYERS_COUNT = 10;
+    public final static int LAYERS_COUNT = 30;
+    public final static int VISIBLE_LAYERS_COUNT = 10;
 
     private final static double TIMELINE_TIME_AXIS_HEIGHT = 30;
     private final static double TIMELINE_LAYER_HEIGHT = 20;
@@ -32,6 +33,24 @@ public class ObjectsTimeline extends Pane {
 
     private final Canvas canvas;
     private final Canvas waveformCanvas;
+
+    private final IntegerProperty visualLayersOffset = new IntegerPropertyBase() {
+        @Override
+        protected void invalidated() {
+            super.invalidated();
+            redraw();
+        }
+
+        @Override
+        public Object getBean() {
+            return null;
+        }
+
+        @Override
+        public String getName() {
+            return "visualLayersOffset";
+        }
+    };
 
     private final IntegerProperty visualMillisOffset = new IntegerPropertyBase() {
         @Override
@@ -148,7 +167,7 @@ public class ObjectsTimeline extends Pane {
 
         getChildren().addAll(waveformCanvas, canvas);
 
-        setMinHeight(TIMELINE_LAYER_HEIGHT * LAYERS_COUNT + TIMELINE_TIME_AXIS_HEIGHT);
+        setMinHeight(TIMELINE_LAYER_HEIGHT * VISIBLE_LAYERS_COUNT + TIMELINE_TIME_AXIS_HEIGHT);
 
         visualMillisOffset.set(0);
         zoom.set(1.0);
@@ -160,7 +179,7 @@ public class ObjectsTimeline extends Pane {
                 changingCursorPos = true;
                 setCursorPosition(pxToMs(event.getX()) + visualMillisOffset.get());
             } else {
-                int layer = (int) ((event.getY() - TIMELINE_TIME_AXIS_HEIGHT) / TIMELINE_LAYER_HEIGHT);
+                int layer = (int) ((event.getY() - TIMELINE_TIME_AXIS_HEIGHT) / TIMELINE_LAYER_HEIGHT) + visualLayersOffset.get();
                 int time = pxToMs(event.getX()) + visualMillisOffset.get();
                 boolean prepareDrag = false;
                 boolean prepareScale = false;
@@ -250,7 +269,7 @@ public class ObjectsTimeline extends Pane {
 
                     selectedObject.get().setStartTime(newStartTime);
 
-                    int layer = (int) ((event.getY() - TIMELINE_TIME_AXIS_HEIGHT) / TIMELINE_LAYER_HEIGHT);
+                    int layer = (int) ((event.getY() - TIMELINE_TIME_AXIS_HEIGHT) / TIMELINE_LAYER_HEIGHT) + visualLayersOffset.get();
                     if (selectedObject.get().getTimelineLayer() != layer) {
                         selectedObject.get().setTimelineLayer(layer);
                     }
@@ -291,8 +310,13 @@ public class ObjectsTimeline extends Pane {
             setCursor(Cursor.DEFAULT);
         });
         setOnScroll(event -> {
-            zoom.set(Math.max(0.1, Math.min(10, zoom.getValue() - event.getDeltaY() / event.getMultiplierY() * 0.1)));
-            visualMillisOffset.set(Math.max(0, visualMillisOffset.get() - pxToMs(event.getDeltaX())));
+            if (event.isControlDown()) {
+                zoom.set(Math.max(0.1, Math.min(10, zoom.getValue() - event.getDeltaY() / event.getMultiplierY() * 0.1)));
+            } else {
+                int layersDelta = (int) (event.getDeltaY() / event.getMultiplierY());
+                visualLayersOffset.set(Math.max(0, Math.min(LAYERS_COUNT - VISIBLE_LAYERS_COUNT, visualLayersOffset.get() - layersDelta)));
+                visualMillisOffset.set(Math.max(0, visualMillisOffset.get() - pxToMs(event.getDeltaX())));
+            }
         });
         setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.DELETE && getSelectedObject() != null) {
@@ -406,7 +430,7 @@ public class ObjectsTimeline extends Pane {
         g.clearRect(0, 0, getWidth(), getHeight());
 
         g.setFill(Theme.BACKGROUND.brighter().deriveColor(0, 1, 1, 0.5));
-        for (int i = 1; i < LAYERS_COUNT; i += 2) {
+        for (int i = visualLayersOffset.get() % 2; i < VISIBLE_LAYERS_COUNT; i += 2) {
             g.fillRect(0, TIMELINE_TIME_AXIS_HEIGHT + TIMELINE_LAYER_HEIGHT * i, getWidth(), TIMELINE_LAYER_HEIGHT);
         }
 
@@ -427,8 +451,8 @@ public class ObjectsTimeline extends Pane {
         }
 
         g.setTextBaseline(VPos.CENTER);
-        for (int i = 0; i < LAYERS_COUNT; i++) {
-            int curLayer = i;
+        for (int i = 0; i < VISIBLE_LAYERS_COUNT; i++) {
+            int curLayer = visualLayersOffset.get() + i;
             for (
                     HittingObject ho : GameObjectsManager.getInstance()
                         .getObjects()
