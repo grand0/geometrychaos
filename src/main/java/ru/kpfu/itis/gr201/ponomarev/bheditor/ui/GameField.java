@@ -167,6 +167,7 @@ public class GameField extends Pane {
         double scaledPivotX = obj.getPivotX() * scalingFactor;
         double scaledPivotY = obj.getPivotY() * scalingFactor;
         shape.setFill(fillColor);
+        shape.setViewOrder(obj.getViewOrder());
         shape.getTransforms().addAll(
                 new Rotate(obj.getRotation(), shapeCenterOnScreenX + scaledPivotX, shapeCenterOnScreenY + scaledPivotY),
                 new Scale(obj.getScaleX(), obj.getScaleY(), shapeCenterOnScreenX + scaledPivotX, shapeCenterOnScreenY + scaledPivotY)

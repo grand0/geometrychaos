@@ -40,7 +40,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
     private final IntegerProperty timelineLayer;
     private final KeyFramesInterpolationDriver interpolationDriver;
     private final ObjectProperty<Shape> shape;
-    private final BooleanProperty isDecoration;
+    private final IntegerProperty viewOrder;
 
     private final IntegerProperty time;
     private final DoubleProperty positionX;
@@ -152,7 +152,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         };
         this.shape.set(Shape.SQUARE);
 
-        this.isDecoration = new BooleanPropertyBase() {
+        this.viewOrder = new IntegerPropertyBase() {
             @Override
             protected void invalidated() {
                 super.invalidated();
@@ -166,9 +166,10 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
             @Override
             public String getName() {
-                return "isDecoration";
+                return "viewOrder";
             }
         };
+        this.viewOrder.set(0);
 
         this.time = new IntegerPropertyBase() {
             @Override
@@ -413,16 +414,16 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         this.shape.set(shape);
     }
 
-    public boolean isDecoration() {
-        return isDecoration.get();
+    public int getViewOrder() {
+        return viewOrder.get();
     }
 
-    public BooleanProperty isDecorationProperty() {
-        return isDecoration;
+    public IntegerProperty viewOrderProperty() {
+        return viewOrder;
     }
 
-    public void setIsDecoration(boolean isDecoration) {
-        this.isDecoration.set(isDecoration);
+    public void setViewOrder(int viewOrder) {
+        this.viewOrder.set(viewOrder);
     }
 
     public int getTime() {
@@ -538,23 +539,23 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         HittingObject that = (HittingObject) o;
-        return changedKeyFrames == that.changedKeyFrames && Objects.equals(getName(), that.getName()) && Objects.equals(getStartTime(), that.getStartTime()) && Objects.equals(getDuration(), that.getDuration()) && Objects.equals(getTimelineLayer(), that.getTimelineLayer()) && Objects.equals(getInterpolationDriver(), that.getInterpolationDriver()) && Objects.equals(getShape(), that.getShape()) && Objects.equals(isDecoration, that.isDecoration) && Objects.equals(getTime(), that.getTime()) && Objects.equals(getPositionX(), that.getPositionX()) && Objects.equals(getPositionY(), that.getPositionY()) && Objects.equals(getScaleX(), that.getScaleX()) && Objects.equals(getScaleY(), that.getScaleY()) && Objects.equals(getRotation(), that.getRotation()) && Objects.equals(getPivotX(), that.getPivotX()) && Objects.equals(getPivotY(), that.getPivotY());
+        return changedKeyFrames == that.changedKeyFrames && Objects.equals(getName(), that.getName()) && Objects.equals(getStartTime(), that.getStartTime()) && Objects.equals(getDuration(), that.getDuration()) && Objects.equals(getTimelineLayer(), that.getTimelineLayer()) && Objects.equals(getInterpolationDriver(), that.getInterpolationDriver()) && Objects.equals(getShape(), that.getShape()) && Objects.equals(getTime(), that.getTime()) && Objects.equals(getPositionX(), that.getPositionX()) && Objects.equals(getPositionY(), that.getPositionY()) && Objects.equals(getScaleX(), that.getScaleX()) && Objects.equals(getScaleY(), that.getScaleY()) && Objects.equals(getRotation(), that.getRotation()) && Objects.equals(getPivotX(), that.getPivotX()) && Objects.equals(getPivotY(), that.getPivotY()) && Objects.equals(getHighlight(), that.getHighlight());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getName(), getStartTime(), getDuration(), getTimelineLayer(), getInterpolationDriver(), getShape(), isDecoration, getTime(), getPositionX(), getPositionY(), getScaleX(), getScaleY(), getRotation(), getPivotX(), getPivotY(), changedKeyFrames);
+        return Objects.hash(getName(), getStartTime(), getDuration(), getTimelineLayer(), getInterpolationDriver(), getShape(), getTime(), getPositionX(), getPositionY(), getScaleX(), getScaleY(), getRotation(), getPivotX(), getPivotY(), getHighlight(), changedKeyFrames);
     }
 
     @Override
     public String toString() {
-        return "HittingObject{" + "name=" + name +
+        return "HittingObject{" +
+                "name=" + name +
                 ", startTime=" + startTime +
                 ", duration=" + duration +
                 ", timelineLayer=" + timelineLayer +
                 ", interpolationDriver=" + interpolationDriver +
                 ", shape=" + shape +
-                ", isDecoration=" + isDecoration +
                 ", time=" + time +
                 ", positionX=" + positionX +
                 ", positionY=" + positionY +
@@ -563,6 +564,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
                 ", rotation=" + rotation +
                 ", pivotX=" + pivotX +
                 ", pivotY=" + pivotY +
+                ", highlight=" + highlight +
                 ", changedKeyFrames=" + changedKeyFrames +
                 '}';
     }

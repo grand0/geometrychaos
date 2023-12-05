@@ -10,15 +10,15 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.anim.KeyFrameType;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.audio.AudioSamples;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.GameObjectsManager;
-import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.dialog.MassCopyDialog;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.dialog.CreateArrayDialog;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.anim.ObjectKeyFrame;
 
-import java.util.Comparator;
-import java.util.Optional;
+import java.util.*;
 
 public class ObjectsTimeline extends Pane {
 
@@ -291,38 +291,60 @@ public class ObjectsTimeline extends Pane {
             setCursor(Cursor.DEFAULT);
         });
         setOnScroll(event -> {
-            zoom.set(Math.max(0.1, Math.min(10, zoom.getValue() + event.getDeltaY() / event.getMultiplierY() * 0.1)));
+            zoom.set(Math.max(0.1, Math.min(10, zoom.getValue() - event.getDeltaY() / event.getMultiplierY() * 0.1)));
             visualMillisOffset.set(Math.max(0, visualMillisOffset.get() - pxToMs(event.getDeltaX())));
         });
         setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.DELETE && getSelectedObject() != null) {
-                GameObjectsManager.getInstance().removeObject(getSelectedObject());
-                setSelectedObject(null);
+                if (event.isShiftDown()) {
+                    String name = getSelectedObject().getName();
+                    List<HittingObject> toRemove = new LinkedList<>();
+                    for (HittingObject obj : GameObjectsManager.getInstance().getObjects()) {
+                        if (obj.getName().equals(name) && !obj.equals(getSelectedObject())) {
+                            toRemove.add(obj);
+                        }
+                    }
+                    for (HittingObject obj : toRemove) {
+                        GameObjectsManager.getInstance().removeObject(obj);
+                    }
+                } else {
+                    GameObjectsManager.getInstance().removeObject(getSelectedObject());
+                    setSelectedObject(null);
+                }
             } else if (event.getCode() == KeyCode.D && event.isControlDown() && getSelectedObject() != null) {
                 if (event.isShiftDown()) {
-                    MassCopyDialog dialog = new MassCopyDialog();
+                    CreateArrayDialog dialog = new CreateArrayDialog();
                     dialog.initOwner(getScene().getWindow());
-                    Optional<MassCopyDialog.MassCopyIntent> opt = dialog.showAndWait();
+                    Optional<CreateArrayDialog.CreateArrayIntent> opt = dialog.showAndWait();
                     opt.ifPresent(intent -> {
-                        for (int i = 1; i <= intent.count(); i++) {
-                            HittingObject copy = new HittingObject(
-                                    getSelectedObject().getName(),
-                                    getSelectedObject().getStartTime() + i * intent.interval(),
-                                    getSelectedObject().getDuration(),
-                                    getSelectedObject().getTimelineLayer()
-                            );
-                            for (ObjectKeyFrame kf : getSelectedObject().getKeyFrames()) {
-                                copy.addKeyFrame(
-                                        kf.getEndValue(),
-                                        kf.getTime(),
-                                        kf.getInterpolatorType(),
-                                        kf.getTag(),
-                                        kf.getRandomizer()
+                        for (int i = 0; i < intent.arraysCount(); i++) {
+                            for (int j = (i == 0 ? 1 : 0); j < intent.count(); j++) {
+                                int timelineLayer = (getSelectedObject().getTimelineLayer() + i) % LAYERS_COUNT;
+                                HittingObject copy = new HittingObject(
+                                        getSelectedObject().getName(),
+                                        getSelectedObject().getStartTime() + j * intent.interval(),
+                                        getSelectedObject().getDuration(),
+                                        timelineLayer
                                 );
+                                for (ObjectKeyFrame kf : getSelectedObject().getKeyFrames()) {
+                                    Object endValue = kf.getEndValue();
+                                    // TODO: maybe there is a better way?
+                                    if (kf.getType() == KeyFrameType.DOUBLE) {
+                                        double deltaX = intent.deltas().get(kf.getTag()).getKey();
+                                        double deltaY = intent.deltas().get(kf.getTag()).getValue();
+                                        endValue = (double) endValue + (i * deltaY + j * deltaX);
+                                    }
+                                    copy.addKeyFrame(
+                                            endValue,
+                                            kf.getTime(),
+                                            kf.getInterpolatorType(),
+                                            kf.getTag(),
+                                            kf.getRandomizer()
+                                    );
+                                }
+                                copy.setShape(getSelectedObject().getShape());
+                                GameObjectsManager.getInstance().addObject(copy);
                             }
-                            copy.setShape(getSelectedObject().getShape());
-                            copy.setIsDecoration(getSelectedObject().isDecoration());
-                            GameObjectsManager.getInstance().addObject(copy);
                         }
                     });
                 } else {
@@ -342,13 +364,14 @@ public class ObjectsTimeline extends Pane {
                         );
                     }
                     copy.setShape(getSelectedObject().getShape());
-                    copy.setIsDecoration(getSelectedObject().isDecoration());
                     GameObjectsManager.getInstance().addObject(copy);
                     setSelectedObject(copy);
                 }
-            } else if (event.getCode() == KeyCode.Q && event.isControlDown()) {
+            } else if (event.getCode() == KeyCode.Q && event.isControlDown() && getSelectedObject() != null) {
                 for (HittingObject obj : GameObjectsManager.getInstance().getObjects()) {
-                    if (obj.isVisible(getCursorPosition()) && obj.getStartTime() != getCursorPosition()) {
+                    if (obj.getTimelineLayer() == getSelectedObject().getTimelineLayer()
+                            && obj.isVisible(getCursorPosition())
+                            && obj.getStartTime() != getCursorPosition()) {
                         obj.setDuration(getCursorPosition() - obj.getStartTime());
                     }
                 }
@@ -426,9 +449,6 @@ public class ObjectsTimeline extends Pane {
                         fillColor = Theme.PRIMARY;
                         g.setStroke(Theme.PRIMARY.darker());
                         g.setLineWidth(1.0);
-                    }
-                    if (ho.isDecoration()) {
-                        fillColor = fillColor.deriveColor(0, 1, 1, 0.8);
                     }
                     g.setFill(fillColor);
                     g.fillRoundRect(

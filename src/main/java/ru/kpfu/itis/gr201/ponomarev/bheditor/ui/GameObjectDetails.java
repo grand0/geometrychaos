@@ -18,7 +18,7 @@ public class GameObjectDetails extends Pane {
     private final Spinner<Integer> startTimeSpinner;
     private final Spinner<Integer> durationSpinner;
     private final ComboBox<Shape> shapeComboBox;
-    private final CheckBox isDecorationCheckBox;
+    private final Spinner<Integer> viewOrderSpinner;
     private final GridPane gridPane;
 
     private final ObjectProperty<HittingObject> displayingObject = new ObjectPropertyBase<>() {
@@ -75,11 +75,13 @@ public class GameObjectDetails extends Pane {
             }
         });
 
-        isDecorationCheckBox = new CheckBox();
-        isDecorationCheckBox.selectedProperty().addListener(obs -> {
+        viewOrderSpinner = new Spinner<>(Integer.MIN_VALUE, Integer.MAX_VALUE, 0, 1);
+        viewOrderSpinner.setEditable(true);
+        viewOrderSpinner.valueProperty().addListener(obs -> {
             HittingObject obj = displayingObject.get();
-            if (obj != null) {
-                obj.setIsDecoration(isDecorationCheckBox.isSelected());
+            int val = viewOrderSpinner.getValue();
+            if (obj != null && obj.getViewOrder() != val) {
+                obj.setViewOrder(val);
             }
         });
 
@@ -91,7 +93,7 @@ public class GameObjectDetails extends Pane {
         gridPane.addRow(1, makeLabel("Start time"), startTimeSpinner);
         gridPane.addRow(2, makeLabel("Duration"), durationSpinner);
         gridPane.addRow(3, makeLabel("Shape"), shapeComboBox);
-        gridPane.addRow(4, makeLabel("Decoration"), isDecorationCheckBox);
+        gridPane.addRow(4, makeLabel("View order"), viewOrderSpinner);
 
         getChildren().add(gridPane);
 
@@ -122,7 +124,7 @@ public class GameObjectDetails extends Pane {
         startTimeSpinner.getEditor().setText(String.valueOf(obj.getStartTime()));
         durationSpinner.getEditor().setText(String.valueOf(obj.getDuration()));
         shapeComboBox.setValue(obj.getShape());
-        isDecorationCheckBox.setSelected(obj.isDecoration());
+        viewOrderSpinner.getEditor().setText(String.valueOf(obj.getViewOrder()));
     }
 
     private Label makeLabel(String text) {
