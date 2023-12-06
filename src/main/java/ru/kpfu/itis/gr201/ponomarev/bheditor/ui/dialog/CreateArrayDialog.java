@@ -10,6 +10,7 @@ import javafx.scene.control.Spinner;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
 import javafx.util.Pair;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.anim.KeyFrameTag;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 
 import java.util.HashMap;
@@ -50,8 +51,8 @@ public class CreateArrayDialog extends Dialog<CreateArrayDialog.CreateArrayInten
         gridPane.getRowConstraints().get(3).setValignment(VPos.BOTTOM);
 
         // TODO: allow not only doubles
-        Map<String, Pair<Spinner<Double>, Spinner<Double>>> deltaSpinnersMap = new HashMap<>();
-        for (String tag : HittingObject.KEYFRAME_TAGS) {
+        Map<KeyFrameTag, Pair<Spinner<Double>, Spinner<Double>>> deltaSpinnersMap = new HashMap<>();
+        for (KeyFrameTag tag : KeyFrameTag.values()) {
             Spinner<Double> xSpinner = new Spinner<>(
                     -Double.MAX_VALUE, Double.MAX_VALUE, 0.0, 1.0
             );
@@ -61,7 +62,7 @@ public class CreateArrayDialog extends Dialog<CreateArrayDialog.CreateArrayInten
             xSpinner.setEditable(true);
             ySpinner.setEditable(true);
             deltaSpinnersMap.put(tag, new Pair<>(xSpinner, ySpinner));
-            gridPane.addRow(gridPane.getRowCount(), new Label(tag), xSpinner, ySpinner);
+            gridPane.addRow(gridPane.getRowCount(), new Label(tag.getName()), xSpinner, ySpinner);
         }
 
         getDialogPane().setContent(gridPane);
@@ -70,7 +71,7 @@ public class CreateArrayDialog extends Dialog<CreateArrayDialog.CreateArrayInten
 
         setResultConverter(btn -> {
             if (btn == ButtonType.OK) {
-                Map<String, Pair<Double, Double>> deltasMap = deltaSpinnersMap.entrySet()
+                Map<KeyFrameTag, Pair<Double, Double>> deltasMap = deltaSpinnersMap.entrySet()
                         .stream()
                         .collect(Collectors.toMap(Map.Entry::getKey, entry -> new Pair<>(
                                 entry.getValue().getKey().getValue(),
@@ -89,5 +90,5 @@ public class CreateArrayDialog extends Dialog<CreateArrayDialog.CreateArrayInten
     }
 
     // TODO: allow not only doubles
-    public record CreateArrayIntent(int count, int interval, int arraysCount, Map<String, Pair<Double, Double>> deltas) { }
+    public record CreateArrayIntent(int count, int interval, int arraysCount, Map<KeyFrameTag, Pair<Double, Double>> deltas) { }
 }

@@ -9,14 +9,14 @@ import java.util.Objects;
 
 public class ObjectKeyFrame extends ObjectPropertyBase<ObjectKeyFrame> {
     private final IntegerProperty time;
-    private final StringProperty tag;
+    private final ObjectProperty<KeyFrameTag> tag;
     private final WritableValue<?> target;
     private final ObjectProperty<Object> endValue;
     private final ObjectProperty<InterpolatorType> interpolatorType;
     private final ObjectProperty<ValueRandomizer> randomizer;
     private final KeyFrameType type;
 
-    public <T> ObjectKeyFrame(int time, String tag, WritableValue<T> target, T endValue, InterpolatorType interpolator, ValueRandomizer randomizer) {
+    public <T> ObjectKeyFrame(int time, KeyFrameTag tag, WritableValue<T> target, T endValue, InterpolatorType interpolator, ValueRandomizer randomizer) {
         this.target = target;
 
         this.time = new IntegerPropertyBase() {
@@ -32,7 +32,7 @@ public class ObjectKeyFrame extends ObjectPropertyBase<ObjectKeyFrame> {
         };
         this.time.set(time);
 
-        this.tag = new StringPropertyBase() {
+        this.tag = new ObjectPropertyBase<>() {
             @Override
             public Object getBean() {
                 return null;
@@ -40,7 +40,7 @@ public class ObjectKeyFrame extends ObjectPropertyBase<ObjectKeyFrame> {
 
             @Override
             public String getName() {
-                return "name";
+                return "tag";
             }
         };
         this.tag.set(tag);
@@ -123,15 +123,15 @@ public class ObjectKeyFrame extends ObjectPropertyBase<ObjectKeyFrame> {
         this.time.set(time);
     }
 
-    public String getTag() {
+    public KeyFrameTag getTag() {
         return tag.get();
     }
 
-    public StringProperty tagProperty() {
+    public ObjectProperty<KeyFrameTag> tagProperty() {
         return tag;
     }
 
-    public void setTag(String tag) {
+    public void setTag(KeyFrameTag tag) {
         this.tag.set(tag);
     }
 

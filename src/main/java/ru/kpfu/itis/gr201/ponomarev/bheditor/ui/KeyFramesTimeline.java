@@ -10,6 +10,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.anim.KeyFrameTag;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.InterpolatorType;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.Theme;
@@ -28,8 +29,7 @@ public class KeyFramesTimeline extends Pane {
 
     private final Canvas canvas;
 
-    private final String name;
-    private final String keyFrameTag;
+    private final KeyFrameTag keyFrameTag;
     private final ObjectProperty<HittingObject> currentObject;
     private final ObjectProperty<ObjectKeyFrame> selectedKeyFrame;
 
@@ -37,9 +37,8 @@ public class KeyFramesTimeline extends Pane {
 
     private boolean lostKeyFrameFocus = false;
 
-    public KeyFramesTimeline(String name, String keyFrameTag, ObjectProperty<HittingObject> currentObject) {
-        this.name = name;
-        this.keyFrameTag = keyFrameTag;
+    public KeyFramesTimeline(KeyFrameTag tag, ObjectProperty<HittingObject> currentObject) {
+        this.keyFrameTag = tag;
 
         this.currentObject = new ObjectPropertyBase<>() {
             @Override
@@ -100,16 +99,16 @@ public class KeyFramesTimeline extends Pane {
         });
         setOnMouseClicked(event -> {
             if (hoveringAddButton && currentObject.get() != null) {
-                Optional<ObjectKeyFrame> opt = currentObject.get().getKeyFrame(currentObject.get().getTime(), keyFrameTag);
+                Optional<ObjectKeyFrame> opt = currentObject.get().getKeyFrame(currentObject.get().getTime(), tag);
                 if (opt.isPresent()) {
                     setLostKeyFrameFocus(false);
                     setSelectedKeyFrame(opt.get());
                 } else {
                     currentObject.get().addKeyFrame(
-                            HittingObject.getDefaultValueForTag(keyFrameTag),
+                            HittingObject.getDefaultValueForTag(tag),
                             currentObject.get().getTime(),
                             InterpolatorType.LINEAR,
-                            keyFrameTag,
+                            tag,
                             null
                     );
                 }
@@ -170,7 +169,7 @@ public class KeyFramesTimeline extends Pane {
             g.setTextAlign(TextAlignment.RIGHT);
             g.setFill(Theme.ON_BACKGROUND.deriveColor(0, 1, 1, 0.3));
             g.setFont(Font.font(16));
-            g.fillText(name, getWidth() - 10, TIMELINE_HEIGHT / 2);
+            g.fillText(keyFrameTag.getName(), getWidth() - 10, TIMELINE_HEIGHT / 2);
 
             for (ObjectKeyFrame kf : getKeyFrames()) {
                 double kfSize = KEYFRAME_SIZE;

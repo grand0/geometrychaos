@@ -3,6 +3,7 @@ package ru.kpfu.itis.gr201.ponomarev.bheditor.game;
 import javafx.beans.property.*;
 import javafx.beans.value.WritableValue;
 import javafx.collections.ObservableList;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.anim.KeyFrameTag;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.ObjectsTimeline;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.InterpolatorType;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.anim.KeyFramesInterpolationDriver;
@@ -13,26 +14,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class HittingObject extends ObjectPropertyBase<HittingObject> {
-
-    public static final String POSITION_X_KEYFRAME_TAG = "positionX";
-    public static final String POSITION_Y_KEYFRAME_TAG = "positionY";
-    public static final String SCALE_X_KEYFRAME_TAG = "scaleX";
-    public static final String SCALE_Y_KEYFRAME_TAG = "scaleY";
-    public static final String ROTATION_KEYFRAME_TAG = "rotation";
-    public static final String PIVOT_X_KEYFRAME_TAG = "pivotX";
-    public static final String PIVOT_Y_KEYFRAME_TAG = "pivotY";
-    public static final String HIGHLIGHT_KEYFRAME_TAG = "highlight";
-
-    public static final String[] KEYFRAME_TAGS = new String[] {
-            POSITION_X_KEYFRAME_TAG,
-            POSITION_Y_KEYFRAME_TAG,
-            SCALE_X_KEYFRAME_TAG,
-            SCALE_Y_KEYFRAME_TAG,
-            ROTATION_KEYFRAME_TAG,
-            PIVOT_X_KEYFRAME_TAG,
-            PIVOT_Y_KEYFRAME_TAG,
-            HIGHLIGHT_KEYFRAME_TAG,
-    };
 
     private final StringProperty name;
     private final IntegerProperty startTime;
@@ -51,6 +32,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
     private final DoubleProperty pivotX;
     private final DoubleProperty pivotY;
     private final DoubleProperty highlight;
+    private final DoubleProperty stroke;
 
     private boolean changedKeyFrames = false;
 
@@ -212,6 +194,9 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
         this.highlight = makeDoublePropertyWithName("highlight");
         setHighlight(0.0);
+
+        this.stroke = makeDoublePropertyWithName("stroke");
+        setStroke(0.0);
     }
 
     private DoublePropertyBase makeDoublePropertyWithName(String name) {
@@ -235,7 +220,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
     }
 
     public void initStartKeyFrames() {
-        for (String tag : KEYFRAME_TAGS) {
+        for (KeyFrameTag tag : KeyFrameTag.values()) {
             addKeyFrame(
                     getDefaultValueForTag(tag),
                     0,
@@ -257,7 +242,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         }
     }
 
-    public Optional<ObjectKeyFrame> getKeyFrame(int time, String tag) {
+    public Optional<ObjectKeyFrame> getKeyFrame(int time, KeyFrameTag tag) {
         return interpolationDriver.getKeyFrames()
                 .stream()
                 .filter(
@@ -266,17 +251,18 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
                 .findFirst();
     }
 
-    public ObjectKeyFrame addKeyFrame(Object value, int time, InterpolatorType interpolator, String tag, ValueRandomizer randomizer) {
+    public ObjectKeyFrame addKeyFrame(Object value, int time, InterpolatorType interpolator, KeyFrameTag tag, ValueRandomizer randomizer) {
         WritableValue<?> prop = null;
         switch (tag) {
-            case POSITION_X_KEYFRAME_TAG -> prop = positionX;
-            case POSITION_Y_KEYFRAME_TAG -> prop = positionY;
-            case SCALE_X_KEYFRAME_TAG -> prop = scaleX;
-            case SCALE_Y_KEYFRAME_TAG -> prop = scaleY;
-            case ROTATION_KEYFRAME_TAG -> prop = rotation;
-            case PIVOT_X_KEYFRAME_TAG -> prop = pivotX;
-            case PIVOT_Y_KEYFRAME_TAG -> prop = pivotY;
-            case HIGHLIGHT_KEYFRAME_TAG -> prop = highlight;
+            case POSITION_X -> prop = positionX;
+            case POSITION_Y -> prop = positionY;
+            case SCALE_X -> prop = scaleX;
+            case SCALE_Y -> prop = scaleY;
+            case ROTATION -> prop = rotation;
+            case PIVOT_X -> prop = pivotX;
+            case PIVOT_Y -> prop = pivotY;
+            case HIGHLIGHT -> prop = highlight;
+            case STROKE -> prop = stroke;
         }
         if (prop == null) {
             throw new IllegalArgumentException("Unknown property");
@@ -285,7 +271,7 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private ObjectKeyFrame addKeyFrame(Object value, int time, InterpolatorType interpolator, String tag, ValueRandomizer randomizer, WritableValue property) {
+    private ObjectKeyFrame addKeyFrame(Object value, int time, InterpolatorType interpolator, KeyFrameTag tag, ValueRandomizer randomizer, WritableValue property) {
         getKeyFrame(time, tag).ifPresent(kf -> interpolationDriver.getKeyFrames().remove(kf));
         ObjectKeyFrame kf = new ObjectKeyFrame(
                 time,
@@ -312,18 +298,19 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
         fireValueChangedEvent();
     }
 
-    public static Object getDefaultValueForTag(String tag) {
+    public static Object getDefaultValueForTag(KeyFrameTag tag) {
         switch (tag) {
-            case POSITION_X_KEYFRAME_TAG,
-                    POSITION_Y_KEYFRAME_TAG,
-                    ROTATION_KEYFRAME_TAG,
-                    PIVOT_X_KEYFRAME_TAG,
-                    PIVOT_Y_KEYFRAME_TAG,
-                    HIGHLIGHT_KEYFRAME_TAG -> {
+            case POSITION_X,
+                    POSITION_Y,
+                    ROTATION,
+                    PIVOT_X,
+                    PIVOT_Y,
+                    HIGHLIGHT,
+                    STROKE -> {
                 return 0.0;
             }
-            case SCALE_X_KEYFRAME_TAG,
-                    SCALE_Y_KEYFRAME_TAG -> {
+            case SCALE_X,
+                    SCALE_Y -> {
                 return 1.0;
             }
         }
@@ -532,6 +519,18 @@ public class HittingObject extends ObjectPropertyBase<HittingObject> {
 
     public void setHighlight(double highlight) {
         this.highlight.set(highlight);
+    }
+
+    public double getStroke() {
+        return stroke.get();
+    }
+
+    public DoubleProperty strokeProperty() {
+        return stroke;
+    }
+
+    public void setStroke(double stroke) {
+        this.stroke.set(stroke);
     }
 
     @Override

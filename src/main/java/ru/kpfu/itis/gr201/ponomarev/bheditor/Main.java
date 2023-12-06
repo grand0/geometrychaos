@@ -17,6 +17,7 @@ import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.anim.KeyFrameTag;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.audio.AudioSamples;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.*;
@@ -182,16 +183,9 @@ public class Main extends Application {
             }
         };
 
-        KeyFramesTimeline[] kfTimelines = new KeyFramesTimeline[] {
-                new KeyFramesTimeline("PosX", HittingObject.POSITION_X_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("PosY", HittingObject.POSITION_Y_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("ScaleX", HittingObject.SCALE_X_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("ScaleY", HittingObject.SCALE_Y_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("Rot", HittingObject.ROTATION_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("PivotX", HittingObject.PIVOT_X_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("PivotY", HittingObject.PIVOT_Y_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
-                new KeyFramesTimeline("Hghlgt", HittingObject.HIGHLIGHT_KEYFRAME_TAG, objectsTimeline.selectedObjectProperty()),
-        };
+        KeyFramesTimeline[] kfTimelines = Arrays.stream(KeyFrameTag.values())
+                .map(t -> new KeyFramesTimeline(t, objectsTimeline.selectedObjectProperty()))
+                .toArray(KeyFramesTimeline[]::new);
         for (int i = 0; i < kfTimelines.length; i++) {
             KeyFramesTimeline kft = kfTimelines[i];
             kft.setBackground(Background.fill(Theme.RAINBOW_START_COLOR.deriveColor(i * (360.0 / kfTimelines.length), 1, 1, 1)));

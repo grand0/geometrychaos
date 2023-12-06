@@ -21,6 +21,9 @@ import java.util.Objects;
 
 public class GameField extends Pane {
 
+    public static final double SIN_30 = Math.sin(Math.PI / 6.0);
+    public static final double COS_30 = Math.cos(Math.PI / 6.0);
+
     public static final double FIELD_WIDTH = 1280;
     public static final double FIELD_HEIGHT = 720;
     public static final double FIELD_ASPECT_RATIO = FIELD_WIDTH / FIELD_HEIGHT;
@@ -154,19 +157,39 @@ public class GameField extends Pane {
                 };
                 shape = new Polygon(points);
             }
+            case HEXAGON -> {
+                double sideLength = shapeSize / (2 * SIN_30 + 1);
+                double halfHeight = sideLength * COS_30;
+                double[] points = new double[] {
+                        (obj.getPositionX() - sideLength / 2) * scalingFactor + getWidth() / 2, (obj.getPositionY() - halfHeight) * scalingFactor + getHeight() / 2,
+                        (obj.getPositionX() + sideLength / 2) * scalingFactor + getWidth() / 2, (obj.getPositionY() - halfHeight) * scalingFactor + getHeight() / 2,
+                        (obj.getPositionX() + shapeSize  / 2) * scalingFactor + getWidth() / 2, (obj.getPositionY()             ) * scalingFactor + getHeight() / 2,
+                        (obj.getPositionX() + sideLength / 2) * scalingFactor + getWidth() / 2, (obj.getPositionY() + halfHeight) * scalingFactor + getHeight() / 2,
+                        (obj.getPositionX() - sideLength / 2) * scalingFactor + getWidth() / 2, (obj.getPositionY() + halfHeight) * scalingFactor + getHeight() / 2,
+                        (obj.getPositionX() - shapeSize  / 2) * scalingFactor + getWidth() / 2, (obj.getPositionY()             ) * scalingFactor + getHeight() / 2,
+                };
+                shape = new Polygon(points);
+            }
         }
         if (shape == null) {
             throw new IllegalArgumentException("Unknown shape.");
         }
-        Color fillColor = Theme.PRIMARY;
+        Color shapeColor = Theme.PRIMARY;
         if (obj.getHighlight() > 0.0) { // make brighter
-            fillColor = fillColor.interpolate(Color.WHITE, obj.getHighlight());
+            shapeColor = shapeColor.interpolate(Color.WHITE, obj.getHighlight());
         } else if (obj.getHighlight() < 0.0) { // make transparent
-            fillColor = fillColor.deriveColor(0, 1, 1, 1 + obj.getHighlight());
+            shapeColor = shapeColor.deriveColor(0, 1, 1, 1 + obj.getHighlight());
         }
         double scaledPivotX = obj.getPivotX() * scalingFactor;
         double scaledPivotY = obj.getPivotY() * scalingFactor;
-        shape.setFill(fillColor);
+        if (obj.getStroke() <= 0.0) {
+            shape.setFill(shapeColor);
+        } else {
+            shape.setStrokeWidth(obj.getStroke());
+            shape.setStrokeType(StrokeType.INSIDE);
+            shape.setStroke(shapeColor);
+            shape.setFill(null);
+        }
         shape.setViewOrder(obj.getViewOrder());
         shape.getTransforms().addAll(
                 new Rotate(obj.getRotation(), shapeCenterOnScreenX + scaledPivotX, shapeCenterOnScreenY + scaledPivotY),

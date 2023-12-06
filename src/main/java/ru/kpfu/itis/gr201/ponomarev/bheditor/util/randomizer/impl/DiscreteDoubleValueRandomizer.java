@@ -15,7 +15,7 @@ public class DiscreteDoubleValueRandomizer extends DoubleValueRandomizer {
     public Object randomize() {
         double val = rng.nextDouble(getStartValue(), getEndValue());
         double delta = val - getStartValue();
-        int steps = (int) (delta / getStep());
+        int steps = (int) Math.round(delta / getStep());
         return getStartValue() + getStep() * steps;
     }
 

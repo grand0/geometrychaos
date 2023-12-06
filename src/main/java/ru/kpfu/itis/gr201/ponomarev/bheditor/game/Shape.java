@@ -3,7 +3,8 @@ package ru.kpfu.itis.gr201.ponomarev.bheditor.game;
 public enum Shape {
     SQUARE("Square"),
     CIRCLE("Circle"),
-    TRIANGLE("Triangle");
+    TRIANGLE("Triangle"),
+    HEXAGON("Hexagon");
 
     public static final double DEFAULT_SHAPE_SIZE = 100;
 
