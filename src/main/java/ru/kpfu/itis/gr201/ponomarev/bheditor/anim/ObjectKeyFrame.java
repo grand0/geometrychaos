@@ -90,9 +90,12 @@ public class ObjectKeyFrame extends ObjectPropertyBase<ObjectKeyFrame> {
                     : (target instanceof WritableLongValue) ? KeyFrameType.LONG
                     : (target instanceof WritableFloatValue) ? KeyFrameType.FLOAT
                     : (target instanceof WritableDoubleValue) ? KeyFrameType.DOUBLE
-                    : KeyFrameType.OBJECT
+                    : null
                 : (target instanceof WritableBooleanValue) ? KeyFrameType.BOOLEAN
-                : KeyFrameType.OBJECT;
+                : null;
+        if (this.type == null) {
+            throw new IllegalArgumentException("Unsupported target type");
+        }
     }
 
     public void randomize() {

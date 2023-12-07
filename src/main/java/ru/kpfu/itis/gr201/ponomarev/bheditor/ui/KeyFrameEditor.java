@@ -231,7 +231,7 @@ public class KeyFrameEditor extends Pane {
                 randomizerComboBox.setConverter(new StringConverter<>() {
                     @Override
                     public String toString(ValueRandomizer object) {
-                        return object == null ? "No randomizer" : object.getName();
+                        return object == null ? "No randomizer" : object.getType().getName();
                     }
 
                     @Override
@@ -356,10 +356,6 @@ public class KeyFrameEditor extends Pane {
                     }
                 });
                 return spinner;
-            }
-            case OBJECT -> {
-                // TODO: maybe remove object keyframe type and instead make more specific ones?
-                throw new RuntimeException("Editor for OBJECT key frames is not supported yet.");
             }
         }
         throw new RuntimeException("Unknown type.");

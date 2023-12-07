@@ -84,7 +84,6 @@ public class KeyFramesInterpolationDriver {
             case LONG -> ((WritableLongValue) writable).set((Long) value);
             case FLOAT -> ((WritableFloatValue) writable).set((Float) value);
             case DOUBLE -> ((WritableDoubleValue) writable).set((Double) value);
-            case OBJECT -> ((WritableObjectValue) writable).set(value);
         }
     }
 

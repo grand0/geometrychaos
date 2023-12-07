@@ -9,16 +9,17 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
+import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.anim.KeyFrameTag;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.audio.AudioSamples;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.exception.LevelLoadException;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.exception.LevelSaveException;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.HittingObject;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.ui.*;
 import ru.kpfu.itis.gr201.ponomarev.bheditor.game.GameObjectsManager;
@@ -29,6 +30,7 @@ import ru.kpfu.itis.gr201.ponomarev.bheditor.anim.ObjectKeyFrame;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -64,23 +66,7 @@ public class Main extends Application {
             }
         };
 
-        MenuItem openAudioMenuItem = new MenuItem("Open...");
-        openAudioMenuItem.setOnAction(event -> {
-            OpenAudioDialog dialog = new OpenAudioDialog();
-            dialog.setOwner(primaryStage);
-            Optional<File> opt = dialog.showAndWait();
-            opt.ifPresent(file -> {
-                try (AudioInputStream ais = AudioSystem.getAudioInputStream(file)) {
-                    audioSamples.set(new AudioSamples(ais));
-                    mediaPlayer.set(new MediaPlayer(new Media(file.toURI().toString())));
-                } catch (Exception e) {
-                    audioSamples.set(null);
-                    mediaPlayer.set(null);
-                }
-            });
-        });
-        Menu audioMenu = new Menu("Audio", null, openAudioMenuItem);
-        MenuBar menuBar = new MenuBar(audioMenu);
+        MenuBar menuBar = makeMenubar(primaryStage, audioSamples, mediaPlayer);
 
         ObjectsTimeline objectsTimeline = new ObjectsTimeline();
         objectsTimeline.audioSamplesProperty().bind(audioSamples);
@@ -235,6 +221,77 @@ public class Main extends Application {
         primaryStage.setScene(scene);
         primaryStage.setMaximized(true);
         primaryStage.show();
+    }
+
+    private static MenuBar makeMenubar(Stage primaryStage, ObjectProperty<AudioSamples> audioSamples, ObjectProperty<MediaPlayer> mediaPlayer) {
+        MenuItem saveLevelMenuItem = new MenuItem("Save...");
+        saveLevelMenuItem.setOnAction(event -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Save level");
+            FileChooser.ExtensionFilter extensionFilter = new FileChooser.ExtensionFilter("Level (*.bhlvl)", "*.bhlvl");
+            fileChooser.getExtensionFilters().add(extensionFilter);
+            File file = fileChooser.showSaveDialog(primaryStage);
+            if (file != null) {
+                try {
+                    file.createNewFile();
+                    GameObjectsManager.getInstance().saveObjects(file);
+                } catch (IOException | LevelSaveException e) {
+                    Alert alert = new Alert(
+                            Alert.AlertType.ERROR,
+                            "Couldn't save level. Error: " + e.getMessage() + ".",
+                            ButtonType.OK
+                    );
+                    alert.initOwner(primaryStage);
+                    alert.show();
+
+                    e.printStackTrace(System.err); // TODO: maybe use proper logging?
+                }
+            }
+        });
+        MenuItem loadLevelMenuItem = new MenuItem("Load...");
+        loadLevelMenuItem.setOnAction(event -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Load level");
+            FileChooser.ExtensionFilter extensionFilter = new FileChooser.ExtensionFilter("Level (*.bhlvl)", "*.bhlvl");
+            fileChooser.getExtensionFilters().add(extensionFilter);
+            File file = fileChooser.showOpenDialog(primaryStage);
+            if (file != null) {
+                try {
+                    GameObjectsManager.getInstance().loadObjects(file);
+                } catch (LevelLoadException e) {
+                    Alert alert = new Alert(
+                            Alert.AlertType.ERROR,
+                            "Couldn't load level. Error: " + e.getMessage() + ".",
+                            ButtonType.OK
+                    );
+                    alert.initOwner(primaryStage);
+                    alert.show();
+
+                    e.printStackTrace(System.err); // TODO: maybe use proper logging?
+                }
+            }
+        });
+        Menu levelMenu = new Menu("Level", null, saveLevelMenuItem, loadLevelMenuItem);
+
+        MenuItem openAudioMenuItem = new MenuItem("Open...");
+        openAudioMenuItem.setOnAction(event -> {
+            OpenAudioDialog dialog = new OpenAudioDialog();
+            dialog.setOwner(primaryStage);
+            Optional<File> opt = dialog.showAndWait();
+            opt.ifPresent(file -> {
+                try (AudioInputStream ais = AudioSystem.getAudioInputStream(file)) {
+                    audioSamples.set(new AudioSamples(ais));
+                    mediaPlayer.set(new MediaPlayer(new Media(file.toURI().toString())));
+                } catch (Exception e) {
+                    audioSamples.set(null);
+                    mediaPlayer.set(null);
+                }
+            });
+        });
+        Menu audioMenu = new Menu("Audio", null, openAudioMenuItem);
+
+        MenuBar menuBar = new MenuBar(levelMenu, audioMenu);
+        return menuBar;
     }
 
     private static KeyFrame getEndKeyFrame(ObjectsTimeline objectsTimeline) {

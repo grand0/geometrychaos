@@ -1,6 +1,7 @@
 package ru.kpfu.itis.gr201.ponomarev.bheditor.util.randomizer.impl;
 
 import ru.kpfu.itis.gr201.ponomarev.bheditor.util.randomizer.DoubleValueRandomizer;
+import ru.kpfu.itis.gr201.ponomarev.bheditor.util.randomizer.ValueRandomizerType;
 
 public class LinearDoubleValueRandomizer extends DoubleValueRandomizer {
 
@@ -14,7 +15,7 @@ public class LinearDoubleValueRandomizer extends DoubleValueRandomizer {
     }
 
     @Override
-    public String getName() {
-        return "Linear";
+    public ValueRandomizerType getType() {
+        return ValueRandomizerType.DOUBLE_LINEAR;
     }
 }
