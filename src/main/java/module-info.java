@@ -5,15 +5,18 @@ module ru.kpfu.itis.gr201.ponomarev.bheditor {
     requires org.json;
 
 
-    exports ru.kpfu.itis.gr201.ponomarev.bheditor;
-    exports ru.kpfu.itis.gr201.ponomarev.bheditor.game;
-    exports ru.kpfu.itis.gr201.ponomarev.bheditor.ui;
-    exports ru.kpfu.itis.gr201.ponomarev.bheditor.util;
-    exports ru.kpfu.itis.gr201.ponomarev.bheditor.util.converter;
-    exports ru.kpfu.itis.gr201.ponomarev.bheditor.anim;
-    exports ru.kpfu.itis.gr201.ponomarev.bheditor.util.randomizer;
-    exports ru.kpfu.itis.gr201.ponomarev.bheditor.util.randomizer.impl;
-    exports ru.kpfu.itis.gr201.ponomarev.bheditor.ui.dialog;
-    exports ru.kpfu.itis.gr201.ponomarev.bheditor.audio;
-    exports ru.kpfu.itis.gr201.ponomarev.bheditor.exception;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.ui;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.util;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.converter;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.anim;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.randomizer;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.randomizer.impl;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.ui.dialog;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.audio;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.exception;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.anim;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.game;
 }

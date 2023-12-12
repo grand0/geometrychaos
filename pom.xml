@@ -67,7 +67,7 @@
                         <id>default-cli</id>
                         <configuration>
                             <mainClass>
-                                ru.kpfu.itis.gr201.ponomarev.bheditor/ru.kpfu.itis.gr201.ponomarev.bheditor.Main
+                                ru.kpfu.itis.gr201.ponomarev.bheditor/ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.EditorApplication
                             </mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
@@ -75,6 +75,30 @@
                             <noManPages>true</noManPages>
                             <stripDebug>true</stripDebug>
                             <noHeaderFiles>true</noHeaderFiles>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <id>build-game</id>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>ru.kpfu.itis.gr201.ponomarev.geometrychaos.game.GameApplication</mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>single</goal>
+                            </goals>
                         </configuration>
                     </execution>
                 </executions>
