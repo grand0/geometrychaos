@@ -20,8 +20,10 @@ import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.ui.shapemaker.PlayerSha
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.CollisionsDriver;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.Theme;
 
-import java.util.*;
-import java.util.function.Consumer;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 
 public class GameField extends Pane {
 

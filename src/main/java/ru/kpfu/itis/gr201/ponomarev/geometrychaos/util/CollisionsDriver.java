@@ -4,9 +4,7 @@ import javafx.scene.shape.Shape;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game.Player;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.ui.shapemaker.PlayerShapeMaker;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class CollisionsDriver {
 

@@ -15,8 +15,8 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game.Player;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.game.ui.common.MapDataViewer;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.gamemap.GameMapData;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.Theme;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.gamemap.GameMapData;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.gamemap.GameMapState;
 
 public class RoomScreen extends Screen {
