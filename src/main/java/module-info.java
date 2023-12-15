@@ -1,26 +1,11 @@
-module ru.kpfu.itis.gr201.ponomarev.bheditor {
+module ru.kpfu.itis.gr201.ponomarev.geometrychaos {
     requires javafx.controls;
     requires javafx.media;
     requires java.desktop;
     requires org.json;
 
 
-    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos;
-    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game;
-    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.ui;
-    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.util;
-    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.converter;
-    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.anim;
-    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.randomizer;
-    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.randomizer.impl;
-    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.ui.dialog;
-    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.audio;
-    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.exception;
-    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor;
-    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.anim;
-    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.game;
-    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.game.net.protocol;
-    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.game.net.client;
-    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.game.net.server;
-    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.gamemap;
+    // exports for javafx runtime to launch
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.editorapp to javafx.graphics;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.gameapp to javafx.graphics;
 }

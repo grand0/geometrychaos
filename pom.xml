@@ -67,7 +67,7 @@
                         <id>default-cli</id>
                         <configuration>
                             <mainClass>
-                                ru.kpfu.itis.gr201.ponomarev.bheditor/ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.EditorApplication
+                                ru.kpfu.itis.gr201.ponomarev.bheditor/ru.kpfu.itis.gr201.ponomarev.geometrychaos.editorapp.EditorApplication
                             </mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
@@ -89,7 +89,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>ru.kpfu.itis.gr201.ponomarev.geometrychaos.game.GameApplication</mainClass>
+                                    <mainClass>ru.kpfu.itis.gr201.ponomarev.geometrychaos.gameapp.GameApplication</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
@@ -107,7 +107,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.EditorApplication</mainClass>
+                                    <mainClass>ru.kpfu.itis.gr201.ponomarev.geometrychaos.editorapp.EditorApplication</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
