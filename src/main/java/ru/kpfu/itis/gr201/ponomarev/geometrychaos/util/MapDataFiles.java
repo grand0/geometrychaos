@@ -8,7 +8,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-public class LevelDataFiles {
+public class MapDataFiles {
 
     public static final String AUDIO_FILE_NAME = "audio";
     public static final String LEVEL_FILE_NAME = "level";
@@ -16,14 +16,22 @@ public class LevelDataFiles {
     private final File audio;
     private final File level;
 
-    public LevelDataFiles(File audio, File level) {
+    public MapDataFiles(File audio, File level) {
         this.audio = audio;
         this.level = level;
     }
 
-    public static LevelDataFiles read(File file) throws LevelLoadException {
-        File audio = null, level = null;
-        try (ZipInputStream zin = new ZipInputStream(new FileInputStream(file))) {
+    public static MapDataFiles read(File file) throws LevelLoadException {
+        try (InputStream in = new FileInputStream(file)) {
+            return read(in.readAllBytes());
+        } catch (IOException e) {
+            throw new LevelLoadException(e);
+        }
+    }
+
+    public static MapDataFiles read(byte[] bytes) throws LevelLoadException {
+        File audio = null, level = null; // TODO: change temp files with byte arrays
+        try (ZipInputStream zin = new ZipInputStream(new ByteArrayInputStream(bytes))) {
             ZipEntry entry;
             while ((entry = zin.getNextEntry()) != null) {
                 File tmp = File.createTempFile("gcmap", null);
@@ -50,7 +58,7 @@ public class LevelDataFiles {
         } catch (IOException e) {
             throw new LevelLoadException(e);
         }
-        return new LevelDataFiles(audio, level);
+        return new MapDataFiles(audio, level);
     }
 
     public void write(File file) throws LevelSaveException {

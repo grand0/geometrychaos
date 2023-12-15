@@ -9,17 +9,22 @@ import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.IntegerPropertyBase;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ObjectPropertyBase;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
+import javafx.scene.media.AudioClip;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.stage.FileChooser;
@@ -30,34 +35,48 @@ import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game.GameObject;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game.LevelManager;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game.Player;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.ui.GameField;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.game.ui.LevelSelector;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.game.ui.LoadingScreen;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.game.net.client.GameClient;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.game.net.protocol.ConnectionDenialReason;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.game.ui.common.AudioTimeBar;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.game.ui.screen.*;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.GlobalAudioSpectrumProvider;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.LevelDataFiles;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.MapDataFiles;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.PlayerState;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.Theme;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.gamemap.GameMapData;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.gamemap.GameMapState;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class GameApplication extends Application {
 
-    public static final Point2D DEFAULT_SPAWN_POSITION = new Point2D(GameField.FIELD_WIDTH / 4.0, GameField.FIELD_HEIGHT / 2.0);
+    private Stage primaryStage;
+    private Scene mainScene;
+    private MainMenuScreen mainMenuScreen;
+    private LevelSelector levelSelector;
+    private ConnectScreen connectScreen;
+    private RoomScreen roomScreen;
+    private StackPane gameFieldRoot;
+
+    private GameField gameField;
+    private Label awaitingPlayersLabel;
 
     private MediaPlayer audioPlayer;
-    private GameField gameField;
-    private StackPane gameFieldRoot;
-    private Stage primaryStage;
+    private AudioClip respawnAudioClip;
+
     private Timeline gameTimeControl;
-    private LevelSelector levelSelector;
-    private Scene mainScene;
-    private Player thisPlayer;
     private Timeline gameLoop;
 
-    private MediaPlayer respawnSoundPlayer;
+    private Player thisPlayer;
+    private ObservableList<Player> players;
+
+    private ObjectProperty<GameMapData> selectedGameMap;
+    private ObjectProperty<GameMapState> selectedGameMapState;
 
     private Set<KeyCode> pressedKeysInGame;
 
@@ -67,6 +86,10 @@ public class GameApplication extends Application {
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
 
+        GameClient.getInstance().initApplication(this);
+
+        players = FXCollections.observableArrayList();
+
         URL introAudio = getClass().getResource("/audio/wavelight.mp3");
         if (introAudio != null) {
             this.audioPlayer = new MediaPlayer(new Media(introAudio.toExternalForm()));
@@ -74,19 +97,31 @@ public class GameApplication extends Application {
             this.audioPlayer.play();
         }
 
+        awaitingPlayersLabel = new Label("Awaiting players...");
+        awaitingPlayersLabel.setFont(Theme.HEADLINE_FONT);
+        awaitingPlayersLabel.setTextFill(Theme.ON_BACKGROUND);
+        StackPane.setAlignment(awaitingPlayersLabel, Pos.CENTER);
+
+        mainMenuScreen = new MainMenuScreen();
+        mainMenuScreen.setOnSinglePlayerPressed(() -> switchScene(levelSelector));
+        mainMenuScreen.setOnMultiPlayerPressed(() -> {
+            connectScreen.setError(null);
+            switchScene(connectScreen);
+        });
+
         levelSelector = new LevelSelector();
-        levelSelector.setOnPlayPressed(() -> {
+        levelSelector.setOnSelectPressed(() -> {
             File file = chooseLevel();
             if (file == null) {
                 return;
             }
 
-            switchToLoadingScreen();
+            switchScene(new LoadingScreen());
             Task<Boolean> task = new Task<>() {
                 @Override
                 protected Boolean call() {
                     try {
-                        loadLevel(file);
+                        loadMap(file);
                     } catch (LevelLoadException e) {
                         return false;
                     }
@@ -97,19 +132,98 @@ public class GameApplication extends Application {
             task.setOnSucceeded(event -> {
                 boolean loaded = task.resultNow();
                 if (loaded) {
-                    switchToGameField();
+                    switchScene(gameFieldRoot);
                     startGame();
                 } else {
-                    switchToLevelSelector();
+                    switchScene(levelSelector);
                 }
             });
             new Thread(task).start();
         });
 
+        connectScreen = new ConnectScreen();
+        connectScreen.setOnConnectPressed(data -> {
+            connect(data.username(), data.host());
+        });
+
+        roomScreen = new RoomScreen(players, selectedGameMapProperty(), selectedGameMapStateProperty());
+        roomScreen.setOnSelectPressed(() -> {
+            File file = chooseLevel();
+            if (file == null) {
+                return;
+            }
+
+            switchScene(new LoadingScreen());
+            Task<byte[]> readFileTask = new Task<>() {
+                @Override
+                protected byte[] call() {
+                    try (InputStream in = new FileInputStream(file)) {
+                        return in.readAllBytes();
+                    } catch (IOException e) {
+                        return null;
+                    }
+                }
+            };
+            Task<Void> uploadTask = new Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    GameClient.getInstance().uploadSelectedMap();
+                    return null;
+                }
+            };
+            readFileTask.setOnSucceeded(event -> {
+                byte[] bytes = readFileTask.getValue();
+                switchScene(roomScreen);
+                roomScreen.setReadyButtonVisible(false);
+                if (bytes != null) {
+                    selectedGameMap.set(new GameMapData(file.getName(), bytes));
+                    selectedGameMapState.set(GameMapState.UPLOADING);
+                    new Thread(uploadTask).start();
+                }
+            });
+            uploadTask.setOnFailed(event -> {
+                selectedGameMap.set(null);
+                selectedGameMapState.set(null);
+                GameClient.getInstance().disconnect();
+                connectScreen.setError(uploadTask.getException().toString());
+                switchScene(connectScreen);
+            });
+            uploadTask.setOnSucceeded(event -> {
+                players.forEach(player -> player.setState(PlayerState.DOWNLOADING));
+                roomScreen.updateList();
+                roomScreen.setReadyButtonVisible(true);
+            });
+
+            new Thread(readFileTask).start();
+        });
+        roomScreen.setOnReadyPressed(() -> {
+            switchScene(new LoadingScreen());
+            Task<Void> loadAndPrepareGameTask = new Task<>() {
+                @Override
+                protected Void call() throws LevelLoadException {
+                    loadSelectedMap();
+                    prepareGame();
+                    return null;
+                }
+            };
+            loadAndPrepareGameTask.setOnSucceeded(event -> {
+                switchScene(gameFieldRoot);
+                GameClient.getInstance().thisPlayerReady();
+            });
+            loadAndPrepareGameTask.setOnFailed(event -> {
+                loadAndPrepareGameTask.getException().printStackTrace(System.err);
+
+                GameClient.getInstance().disconnect();
+                connectScreen.setError(loadAndPrepareGameTask.getException().toString());
+                switchScene(connectScreen);
+            });
+            new Thread(loadAndPrepareGameTask).start();
+        });
+
         gameLoop = new Timeline();
         gameLoop.getKeyFrames().addAll(
                 new KeyFrame(
-                        new Duration(1000.0 / 240.0),
+                        new Duration(1000.0 / 60.0),
                         this::gameLoopTick
                 )
         );
@@ -119,15 +233,26 @@ public class GameApplication extends Application {
 
         mainScene = new Scene(levelSelector, 1280, 720);
         mainScene.setOnKeyPressed(event -> {
-            if (mainScene.getRoot() == levelSelector) {
+            if (mainScene.getRoot() == mainMenuScreen) {
                 if (event.getCode() == KeyCode.ESCAPE) {
                     Platform.exit();
+                }
+            } else if (mainScene.getRoot() == levelSelector || mainScene.getRoot() == connectScreen) {
+                if (event.getCode() == KeyCode.ESCAPE) {
+                    switchScene(mainMenuScreen);
+                }
+            } else if (mainScene.getRoot() == roomScreen) {
+                if (event.getCode() == KeyCode.ESCAPE) {
+                    GameClient.getInstance().disconnect();
+                    connectScreen.setError(null);
+                    switchScene(connectScreen);
                 }
             } else if (mainScene.getRoot() == gameFieldRoot) {
                 if (event.getCode() == KeyCode.ESCAPE) {
                     if (event.isShiftDown()) {
                         stopGame();
-                        switchToLevelSelector();
+                        GameClient.getInstance().disconnect();
+                        switchScene(mainMenuScreen);
                     } else if (paused) {
                         resumeGame();
                     } else {
@@ -143,14 +268,127 @@ public class GameApplication extends Application {
             }
         });
 
-        respawnSoundPlayer = new MediaPlayer(new Media(getClass().getResource("/sounds/respawn.mp3").toExternalForm()));
+        respawnAudioClip = new AudioClip(getClass().getResource("/sounds/respawn.mp3").toExternalForm());
 
         primaryStage.setScene(mainScene);
-        primaryStage.setFullScreen(true);
-        primaryStage.setFullScreenExitHint("");
-        primaryStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
-        switchToLevelSelector();
+//        primaryStage.setFullScreen(true);
+//        primaryStage.setFullScreenExitHint("");
+//        primaryStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
+        switchScene(mainMenuScreen);
         primaryStage.show();
+    }
+
+    @Override
+    public void stop() {
+        GameClient.getInstance().disconnect();
+    }
+
+    public void connect(String username, String host) {
+        switchScene(new LoadingScreen());
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                GameClient.getInstance().connect(username, host);
+                return null;
+            }
+        };
+        task.setOnFailed(event -> {
+            connectScreen.setError("Exception: " + event.getSource().getException());
+            switchScene(connectScreen);
+        });
+        new Thread(task).start();
+    }
+
+    public void initThisPlayer(int playerId, String username) {
+        if (thisPlayer != null) {
+            players.remove(thisPlayer);
+        }
+        thisPlayer = new Player(playerId, username);
+        roomScreen.setThisPlayerId(playerId);
+        players.add(thisPlayer);
+    }
+
+    public void addPlayer(int playerId, String username) {
+        Player player = new Player(playerId, username);
+        players.add(player);
+    }
+
+    public void removePlayer(int playerId) {
+        players.removeIf(player -> player.getPlayerId() == playerId);
+    }
+
+    public void clearPlayers() {
+        players.clear();
+    }
+
+    public void connectionApproved() {
+        switchScene(roomScreen);
+    }
+
+    public void connectionDenied(ConnectionDenialReason reason) {
+        connectScreen.setError(reason.getMessage());
+        switchScene(connectScreen);
+    }
+
+    public void mapUploaded() {
+        selectedGameMapStateProperty().set(GameMapState.FINISHED);
+        roomScreen.setReadyButtonVisible(true);
+    }
+
+    public void mapChanged(String mapName, int mapSize) {
+        players.forEach(player -> player.setState(PlayerState.DOWNLOADING));
+        roomScreen.updateList();
+        roomScreen.setReadyButtonVisible(false);
+        selectedGameMapProperty().set(new GameMapData(mapName, new byte[0]));
+        selectedGameMapStateProperty().set(GameMapState.DOWNLOADING);
+        Task<Void> downloadTask = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                GameClient.getInstance().startMapDownloading(mapSize);
+                return null;
+            }
+        };
+        downloadTask.setOnFailed(event -> {
+            connectScreen.setError(downloadTask.getException().toString());
+            switchScene(connectScreen);
+            GameClient.getInstance().disconnect();
+        });
+        new Thread(downloadTask).start();
+    }
+
+    public void mapDownloaded(byte[] mapBytes) {
+        selectedGameMapProperty().set(new GameMapData(getSelectedGameMap().name(), mapBytes));
+        selectedGameMapStateProperty().set(GameMapState.FINISHED);
+        roomScreen.setReadyButtonVisible(true);
+    }
+
+    public void playerDownloadedMap(int playerId) {
+        for (Player player : players) {
+            if (player.getPlayerId() == playerId) {
+                player.setState(PlayerState.IN_ROOM);
+                break;
+            }
+        }
+        roomScreen.updateList();
+    }
+
+    public void playerReady(int playerId) {
+        for (Player player : players) {
+            if (player.getPlayerId() == playerId) {
+                if (player.getState() != PlayerState.READY) {
+                    player.setState(PlayerState.READY);
+                } else {
+                    player.setState(PlayerState.IN_ROOM);
+                }
+                break;
+            }
+        }
+        roomScreen.updateList();
+    }
+
+    public void clientDisconnectedWithError(Throwable t) {
+        connectScreen.setError(t.toString());
+        switchScene(connectScreen);
     }
 
     private File chooseLevel() {
@@ -161,20 +399,39 @@ public class GameApplication extends Application {
         return fileChooser.showOpenDialog(primaryStage);
     }
 
-    private void loadLevel(File file) throws LevelLoadException {
-        LevelDataFiles data = LevelDataFiles.read(file);
+    // TODO: delete this method in favor of loadSelectedMap()
+    private void loadMap(File file) throws LevelLoadException {
+        MapDataFiles data = MapDataFiles.read(file);
         LevelManager.getInstance().loadObjects(data.getLevel());
         if (audioPlayer != null) {
             audioPlayer.stop();
         }
-        audioPlayer = new MediaPlayer(new Media(data.getAudio().toURI().toString()));
-        GlobalAudioSpectrumProvider.registerForMediaPlayer(audioPlayer);
+        if (data.getAudio() != null) {
+            audioPlayer = new MediaPlayer(new Media(data.getAudio().toURI().toString()));
+            GlobalAudioSpectrumProvider.registerForMediaPlayer(audioPlayer);
+        } else {
+            audioPlayer = null;
+            GlobalAudioSpectrumProvider.registerForMediaPlayer(null);
+        }
+    }
+
+    private void loadSelectedMap() throws LevelLoadException {
+        MapDataFiles data = MapDataFiles.read(getSelectedGameMap().data());
+        LevelManager.getInstance().loadObjects(data.getLevel());
+        if (audioPlayer != null) {
+            audioPlayer.stop();
+        }
+        if (data.getAudio() != null) {
+            audioPlayer = new MediaPlayer(new Media(data.getAudio().toURI().toString()));
+            GlobalAudioSpectrumProvider.registerForMediaPlayer(audioPlayer);
+        } else {
+            audioPlayer = null;
+            GlobalAudioSpectrumProvider.registerForMediaPlayer(null);
+        }
     }
 
     private void prepareGame() {
-        thisPlayer = new Player();
-        thisPlayer.setPositionX(DEFAULT_SPAWN_POSITION.getX());
-        thisPlayer.setPositionY(DEFAULT_SPAWN_POSITION.getY());
+        players.forEach(Player::restoreInitialState);
 
         IntegerProperty time = new IntegerPropertyBase() {
             @Override
@@ -190,8 +447,9 @@ public class GameApplication extends Application {
         gameField = new GameField(time, null);
         gameField.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         gameField.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
-        gameField.getPlayers().add(thisPlayer);
-        gameField.setHitPlayerCallback(this::hitPlayerCallback);
+        gameField.getPlayers().addAll(players);
+        gameField.setThisPlayer(thisPlayer);
+        gameField.setHitThisPlayerCallback(this::hitPlayerCallback);
 
         GameObject lastObj = LevelManager.getInstance().getObjects()
                 .stream()
@@ -206,7 +464,11 @@ public class GameApplication extends Application {
                 ),
                 new KeyFrame(
                         new Duration(levelDuration),
-                        event -> switchToLevelSelector(),
+                        event -> {
+                            switchScene(roomScreen); // TODO: change to support single player mode
+                            stopGame();
+                            GameClient.getInstance().thisPlayerReady();
+                        },
                         new KeyValue(time, levelDuration)
                 )
         );
@@ -214,7 +476,8 @@ public class GameApplication extends Application {
         AudioTimeBar timeBar = new AudioTimeBar(time, levelDuration);
         StackPane.setAlignment(timeBar, Pos.TOP_CENTER);
         StackPane.setMargin(timeBar, new Insets(20));
-        gameFieldRoot = new StackPane(gameField, timeBar);
+
+        gameFieldRoot = new StackPane(gameField, timeBar, awaitingPlayersLabel);
         InvalidationListener resizeListener = obs -> {
             double width = gameFieldRoot.getWidth();
             double height = gameFieldRoot.getHeight();
@@ -229,24 +492,19 @@ public class GameApplication extends Application {
         pressedKeysInGame.clear();
     }
 
-    private void switchToGameField() {
-        mainScene.setRoot(gameFieldRoot);
+    private void switchScene(Parent node) {
+        mainScene.setRoot(node);
     }
 
-    private void switchToLevelSelector() {
-        mainScene.setRoot(levelSelector);
-    }
+    public void startGame() {
+        Platform.runLater(() -> gameFieldRoot.getChildren().remove(awaitingPlayersLabel));
 
-    private void switchToLoadingScreen() {
-        mainScene.setRoot(new LoadingScreen());
-    }
-
-    private void startGame() {
-        respawnSoundPlayer.seek(Duration.ZERO);
-        respawnSoundPlayer.play();
+        respawnAudioClip.play();
         gameTimeControl.playFromStart();
-        audioPlayer.stop();
-        audioPlayer.play();
+        if (audioPlayer != null) {
+            audioPlayer.stop();
+            audioPlayer.play();
+        }
         gameLoop.playFromStart();
         paused = false;
     }
@@ -254,7 +512,9 @@ public class GameApplication extends Application {
     private void pauseGame() {
         if (!paused) {
             gameTimeControl.pause();
-            audioPlayer.pause();
+            if (audioPlayer != null) {
+                audioPlayer.pause();
+            }
             gameLoop.pause();
             paused = true;
         }
@@ -263,7 +523,9 @@ public class GameApplication extends Application {
     private void resumeGame() {
         if (paused) {
             gameTimeControl.play();
-            audioPlayer.play();
+            if (audioPlayer != null) {
+                audioPlayer.play();
+            }
             gameLoop.play();
             paused = false;
         }
@@ -272,7 +534,9 @@ public class GameApplication extends Application {
     private void stopGame() {
         gameTimeControl.stop();
         gameLoop.stop();
-        audioPlayer.play(); // continue playing in menu
+        if (audioPlayer != null) {
+            audioPlayer.play(); // continue playing in menu
+        }
     }
 
     public static void main(String[] args) {
@@ -281,7 +545,10 @@ public class GameApplication extends Application {
 
     private void gameLoopTick(ActionEvent event) {
         if (pressedKeysInGame.contains(KeyCode.SPACE)) {
-            thisPlayer.dash();
+            if (thisPlayer.canDash()) {
+                thisPlayer.dash();
+                GameClient.getInstance().thisPlayerDash(thisPlayer.getVelocityX(), thisPlayer.getVelocityY());
+            }
         } else {
             double velX = 0, velY = 0;
             if (pressedKeysInGame.contains(KeyCode.W)) {
@@ -300,12 +567,14 @@ public class GameApplication extends Application {
             thisPlayer.setVelocityY(velY);
         }
 
-        thisPlayer.update();
+        players.forEach(Player::update);
+        GameClient.getInstance().thisPlayerPositionUpdate(thisPlayer.getPositionX(), thisPlayer.getPositionY(), thisPlayer.getVelocityX(), thisPlayer.getVelocityY());
     }
 
-    private void hitPlayerCallback(Player player) {
-        player.damage();
-        if (player.getHealthPoints() == 0) {
+    private void hitPlayerCallback() {
+        thisPlayer.damage();
+        GameClient.getInstance().thisPlayerHit(thisPlayer.getHealthPoints());
+        if (players.stream().allMatch(player -> player.getHealthPoints() == 0)) {
             gameLoop.pause();
             Duration timeToPlayFrom;
             if (gameTimeControl.getCurrentTime().toSeconds() <= 5) {
@@ -318,26 +587,77 @@ public class GameApplication extends Application {
                     new KeyFrame(
                             Duration.ZERO,
                             new KeyValue(gameTimeControl.rateProperty(), 1.0),
-                            new KeyValue(audioPlayer.rateProperty(), 1.0)
+                            audioPlayer != null
+                                    ? new KeyValue(audioPlayer.rateProperty(), 1.0)
+                                    : null
                     ),
                     new KeyFrame(
                             Duration.millis(1000),
                             new KeyValue(gameTimeControl.rateProperty(), 0.001), // for some reason Timeline doesn't like it when rate becomes == 0.0
-                            new KeyValue(audioPlayer.rateProperty(), 0.0)
+                            audioPlayer != null
+                                    ? new KeyValue(audioPlayer.rateProperty(), 0.0)
+                                    : null
                     )
             );
             rateAnim.setOnFinished(event -> {
-                player.restoreHealthPoints();
-                respawnSoundPlayer.seek(Duration.ZERO);
-                respawnSoundPlayer.play();
+                players.forEach(Player::restoreHealthPoints);
+                respawnAudioClip.play();
                 gameLoop.play();
                 gameTimeControl.setRate(1.0);
                 gameTimeControl.jumpTo(timeToPlayFrom);
-                audioPlayer.setRate(1.0);
-                audioPlayer.seek(timeToPlayFrom);
-                audioPlayer.play();
+                if (audioPlayer != null) {
+                    audioPlayer.setRate(1.0);
+                    audioPlayer.seek(timeToPlayFrom);
+                    audioPlayer.play();
+                }
             });
             rateAnim.play();
         }
+    }
+
+    public List<Player> getPlayers() {
+        return Collections.unmodifiableList(players);
+    }
+
+    public GameMapData getSelectedGameMap() {
+        return selectedGameMapProperty().get();
+    }
+
+    public ObjectProperty<GameMapData> selectedGameMapProperty() {
+        if (selectedGameMap == null) {
+            selectedGameMap = new ObjectPropertyBase<>() {
+                @Override
+                public Object getBean() {
+                    return null;
+                }
+
+                @Override
+                public String getName() {
+                    return null;
+                }
+            };
+        }
+        return selectedGameMap;
+    }
+
+    public GameMapState getSelectedGameMapState() {
+        return selectedGameMapStateProperty().get();
+    }
+
+    public ObjectProperty<GameMapState> selectedGameMapStateProperty() {
+        if (selectedGameMapState == null) {
+            selectedGameMapState = new ObjectPropertyBase<>() {
+                @Override
+                public Object getBean() {
+                    return null;
+                }
+
+                @Override
+                public String getName() {
+                    return null;
+                }
+            };
+        }
+        return selectedGameMapState;
     }
 }

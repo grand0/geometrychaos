@@ -10,15 +10,18 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.anim.ObjectKeyFrame;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.audio.LevelAudio;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game.GameObject;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.anim.KeyFrameType;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game.LevelManager;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.ui.dialog.CreateArrayDialog;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.Theme;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.anim.ObjectKeyFrame;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.anim.KeyFrameType;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 
 public class ObjectsTimeline extends Pane {
 

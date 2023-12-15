@@ -22,8 +22,7 @@ public class LevelAudio {
         length = (int) ais.getFrameLength();
         rate = ais.getFormat().getFrameRate();
         int frameSize = ais.getFormat().getFrameSize();
-        byte[] bytes = new byte[frameSize * length];
-        ais.read(bytes);
+        byte[] bytes = ais.readNBytes(frameSize * length);
         channels = ais.getFormat().getChannels();
         samples = new int[channels][length];
         for (int bytesIndex = 0, sampleIndex = 0; bytesIndex < bytes.length; sampleIndex++) {

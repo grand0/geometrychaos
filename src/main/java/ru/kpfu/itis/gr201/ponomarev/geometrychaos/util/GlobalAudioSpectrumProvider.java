@@ -19,8 +19,10 @@ public class GlobalAudioSpectrumProvider {
             player.setAudioSpectrumListener(null);
         }
         player = pl;
-        player.setAudioSpectrumInterval(0.05);
-        player.setAudioSpectrumListener(new GlobalAudioSpectrumListener());
+        if (player != null) {
+            player.setAudioSpectrumInterval(0.05);
+            player.setAudioSpectrumListener(new GlobalAudioSpectrumListener());
+        }
     }
 
     public static void addListener(Consumer<float[]> callback) {

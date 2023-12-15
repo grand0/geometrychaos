@@ -95,11 +95,30 @@
                             <descriptorRefs>
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
                             </descriptorRefs>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>single</goal>
-                            </goals>
+                            <finalName>${project.artifactId}-game-assembly</finalName>
                         </configuration>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>build-editor</id>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.EditorApplication</mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <finalName>${project.artifactId}-editor-assembly</finalName>
+                        </configuration>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

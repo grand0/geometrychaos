@@ -19,4 +19,8 @@ module ru.kpfu.itis.gr201.ponomarev.bheditor {
     exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor;
     exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.anim;
     exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.game;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.game.net.protocol;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.game.net.client;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.game.net.server;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.gamemap;
 }

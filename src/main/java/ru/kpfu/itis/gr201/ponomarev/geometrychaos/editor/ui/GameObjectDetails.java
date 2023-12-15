@@ -4,13 +4,16 @@ import javafx.beans.InvalidationListener;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
 import javafx.collections.FXCollections;
-import javafx.scene.control.*;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game.GameObject;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game.Shape;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.converter.ShapeStringConverter;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.Theme;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.converter.ShapeStringConverter;
 
 public class GameObjectDetails extends Pane {
 

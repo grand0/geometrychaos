@@ -6,7 +6,6 @@ import javafx.scene.shape.*;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game.GameObject;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.ui.GameField;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.Theme;
 
 public class GameObjectShapeMaker {
@@ -74,7 +73,7 @@ public class GameObjectShapeMaker {
         if (obj.getHighlight() > 0.0) { // make brighter
             shapeColor = shapeColor.interpolate(Color.WHITE, obj.getHighlight());
         } else if (obj.getHighlight() < 0.0) { // make transparent
-            shapeColor = shapeColor.deriveColor(0, 1, 1, 1 + obj.getHighlight());
+            shape.setOpacity(1.0 + obj.getHighlight());
         }
         double scaledPivotX = obj.getPivotX() * scalingFactor;
         double scaledPivotY = obj.getPivotY() * scalingFactor;

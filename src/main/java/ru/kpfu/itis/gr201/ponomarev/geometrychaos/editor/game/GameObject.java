@@ -3,11 +3,11 @@ package ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game;
 import javafx.beans.property.*;
 import javafx.beans.value.WritableValue;
 import javafx.collections.ObservableList;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.anim.KeyFrameTag;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.ui.ObjectsTimeline;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.InterpolatorType;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.anim.KeyFramesInterpolationDriver;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.anim.ObjectKeyFrame;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.ui.ObjectsTimeline;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.InterpolatorType;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.anim.KeyFrameTag;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.randomizer.ValueRandomizer;
 
 import java.util.Objects;

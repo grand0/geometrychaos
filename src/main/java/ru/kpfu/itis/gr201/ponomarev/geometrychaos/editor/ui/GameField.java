@@ -8,10 +8,13 @@ import javafx.beans.property.ObjectPropertyBase;
 import javafx.geometry.Point2D;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.Pane;
-import javafx.scene.shape.*;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Shape;
+import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.shape.StrokeType;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game.GameObject;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game.Player;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game.LevelManager;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game.Player;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.ui.shapemaker.GameObjectShapeMaker;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.ui.shapemaker.PlayerShapeMaker;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.CollisionsDriver;
@@ -28,8 +31,9 @@ public class GameField extends Pane {
 
     private boolean listenToObjectsChanges = true;
 
+    private Player thisPlayer;
     private final List<Player> players;
-    private Consumer<Player> hitPlayerCallback;
+    private Runnable hitThisPlayerCallback;
 
     private final IntegerProperty time = new IntegerPropertyBase() {
         @Override
@@ -142,9 +146,11 @@ public class GameField extends Pane {
         getChildren().addAll(transparentPlayersShapes);
 
         // TODO: move to some other place
-        Set<Player> hitPlayers = CollisionsDriver.checkPlayerObjectCollisions(players, objectsShapes, scalingFactor);
-        for (Player hitPlayer : hitPlayers) {
-            hitPlayerCallback.accept(hitPlayer);
+        if (getTime() != 0 && thisPlayer != null) {
+            boolean hit = CollisionsDriver.checkPlayerObjectCollisions(thisPlayer, objectsShapes, scalingFactor);
+            if (hit) {
+                hitThisPlayerCallback.run();
+            }
         }
     }
 
@@ -164,11 +170,19 @@ public class GameField extends Pane {
         return players;
     }
 
-    public Consumer<Player> getHitPlayerCallback() {
-        return hitPlayerCallback;
+    public Runnable getHitThisPlayerCallback() {
+        return hitThisPlayerCallback;
     }
 
-    public void setHitPlayerCallback(Consumer<Player> hitPlayerCallback) {
-        this.hitPlayerCallback = hitPlayerCallback;
+    public void setHitThisPlayerCallback(Runnable hitThisPlayerCallback) {
+        this.hitThisPlayerCallback = hitThisPlayerCallback;
+    }
+
+    public Player getThisPlayer() {
+        return thisPlayer;
+    }
+
+    public void setThisPlayer(Player thisPlayer) {
+        this.thisPlayer = thisPlayer;
     }
 }

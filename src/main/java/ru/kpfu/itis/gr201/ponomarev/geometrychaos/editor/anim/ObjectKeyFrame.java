@@ -1,6 +1,9 @@
 package ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.anim;
 
-import javafx.beans.property.*;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.IntegerPropertyBase;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ObjectPropertyBase;
 import javafx.beans.value.*;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.InterpolatorType;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.anim.KeyFrameTag;

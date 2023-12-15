@@ -16,20 +16,17 @@ import javafx.scene.media.MediaPlayer;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.ui.GameField;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.LevelDataFiles;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.anim.KeyFrameTag;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.anim.ObjectKeyFrame;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.audio.LevelAudio;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.exception.LevelLoadException;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.exception.LevelSaveException;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.ui.*;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game.LevelManager;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.ui.*;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.ui.dialog.OpenAudioDialog;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.MapDataFiles;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.Theme;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.anim.ObjectKeyFrame;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.anim.KeyFrameTag;
 
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.File;
 import java.io.IOException;
@@ -243,7 +240,7 @@ public class EditorApplication extends Application {
 
                     File audio = levelAudio.get() == null ? null : levelAudio.get().getFile();
 
-                    LevelDataFiles data = new LevelDataFiles(audio, level);
+                    MapDataFiles data = new MapDataFiles(audio, level);
                     data.write(mapFile);
                 } catch (IOException | LevelSaveException e) {
                     Alert alert = new Alert(
@@ -267,10 +264,12 @@ public class EditorApplication extends Application {
             File file = fileChooser.showOpenDialog(primaryStage);
             if (file != null) {
                 try {
-                    LevelDataFiles data = LevelDataFiles.read(file);
+                    MapDataFiles data = MapDataFiles.read(file);
                     LevelManager.getInstance().loadObjects(data.getLevel());
-                    levelAudio.set(new LevelAudio(data.getAudio()));
-                    mediaPlayer.set(new MediaPlayer(new Media(data.getAudio().toURI().toString())));
+                    if (data.getAudio() != null) {
+                        levelAudio.set(new LevelAudio(data.getAudio()));
+                        mediaPlayer.set(new MediaPlayer(new Media(data.getAudio().toURI().toString())));
+                    }
                 } catch (LevelLoadException | UnsupportedAudioFileException | IOException e) {
                     Alert alert = new Alert(
                             Alert.AlertType.ERROR,

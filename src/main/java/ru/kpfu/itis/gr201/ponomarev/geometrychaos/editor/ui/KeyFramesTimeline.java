@@ -10,11 +10,11 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.anim.ObjectKeyFrame;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game.GameObject;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.anim.KeyFrameTag;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.InterpolatorType;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.Theme;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.anim.ObjectKeyFrame;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.anim.KeyFrameTag;
 
 import java.util.List;
 import java.util.Optional;

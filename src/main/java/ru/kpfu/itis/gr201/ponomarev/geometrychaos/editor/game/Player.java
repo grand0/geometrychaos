@@ -2,6 +2,7 @@ package ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.game;
 
 import javafx.geometry.Point2D;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editor.ui.GameField;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.util.PlayerState;
 
 public class Player {
 
@@ -13,6 +14,11 @@ public class Player {
     public static final long DASH_DURATION_NS = 200_000_000L;
     public static final long DASH_DEFENSE_DURATION_NS = 400_000_000L;
     public static final long DASH_COOLDOWN_NS = 600_000_000L;
+    public static final Point2D DEFAULT_SPAWN_POSITION = new Point2D(GameField.FIELD_WIDTH / 4.0, GameField.FIELD_HEIGHT / 2.0);
+
+    private final int playerId;
+    private final String username;
+    private PlayerState state = PlayerState.IN_ROOM;
 
     private double positionX;
     private double positionY;
@@ -25,7 +31,11 @@ public class Player {
     private long lastDashTime = 0;
     private boolean wasDashing = false;
 
-    public Player() {
+    public Player(int playerId, String username) {
+        this.playerId = playerId;
+        this.username = username;
+        this.positionX = DEFAULT_SPAWN_POSITION.getX();
+        this.positionY = DEFAULT_SPAWN_POSITION.getY();
         this.healthPoints = DEFAULT_HEALTH_POINTS;
     }
 
@@ -99,6 +109,17 @@ public class Player {
         this.healthPoints = DEFAULT_HEALTH_POINTS;
     }
 
+    public void restoreInitialState() {
+        restoreHealthPoints();
+        this.positionX = DEFAULT_SPAWN_POSITION.getX();
+        this.positionY = DEFAULT_SPAWN_POSITION.getY();
+        this.velocityX = 0;
+        this.velocityY = 0;
+        lastDamageTakenTime = 0;
+        lastDashTime = 0;
+        wasDashing = false;
+    }
+
     public boolean isDamageCooldownActive() {
         return System.nanoTime() - lastDamageTakenTime <= DAMAGE_COOLDOWN_NS;
     }
@@ -138,5 +159,21 @@ public class Player {
 
     private double clamp(double value, double min, double max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    public int getPlayerId() {
+        return playerId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public PlayerState getState() {
+        return state;
+    }
+
+    public void setState(PlayerState state) {
+        this.state = state;
     }
 }
