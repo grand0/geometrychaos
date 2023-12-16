@@ -10,9 +10,6 @@ import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui.Theme;
 
 public class GameObjectShapeMaker {
 
-    public static final double SIN_30 = Math.sin(Math.PI / 6.0);
-    public static final double COS_30 = Math.cos(Math.PI / 6.0);
-
     public static final double PIVOT_CROSS_SIZE = 7;
     public static final double SHAPE_CENTER_POINT_SIZE = 5;
     
@@ -23,52 +20,19 @@ public class GameObjectShapeMaker {
 
         double shapeSize = ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.Shape.DEFAULT_SHAPE_SIZE;
 
-        Shape shape = null;
+        ShapeMaker shapeMaker = new ShapeMaker(
+                obj.getPositionX(),
+                obj.getPositionY(),
+                shapeSize,
+                scalingFactor,
+                obj.getShape(),
+                centerOfScreen
+        );
+        Shape shape = shapeMaker.make();
+
         double shapeCenterOnScreenX = (obj.getPositionX() * scalingFactor) + centerOfScreen.getX();
         double shapeCenterOnScreenY = (obj.getPositionY() * scalingFactor) + centerOfScreen.getY();
-        switch (obj.getShape()) {
-            case SQUARE -> {
-                shape = new Rectangle(
-                        ((obj.getPositionX() - shapeSize / 2) * scalingFactor) + centerOfScreen.getX(),
-                        ((obj.getPositionY() - shapeSize / 2) * scalingFactor) + centerOfScreen.getY(),
-                        shapeSize * scalingFactor,
-                        shapeSize * scalingFactor
-                );
-            }
-            case CIRCLE -> {
-                shape = new Ellipse(
-                        (obj.getPositionX() * scalingFactor) + centerOfScreen.getX(),
-                        (obj.getPositionY() * scalingFactor) + centerOfScreen.getY(),
-                        (shapeSize / 2) * scalingFactor,
-                        (shapeSize / 2) * scalingFactor
-                );
-            }
-            case TRIANGLE -> {
-                double height = Math.sqrt(0.75 * shapeSize * shapeSize);
-                double[] points = new double[] {
-                        (obj.getPositionX()                ) * scalingFactor + centerOfScreen.getX(), (obj.getPositionY() - height * (2.0 / 3.0)) * scalingFactor + centerOfScreen.getY(),
-                        (obj.getPositionX() + shapeSize / 2) * scalingFactor + centerOfScreen.getX(), (obj.getPositionY() + height / 3.0        ) * scalingFactor + centerOfScreen.getY(),
-                        (obj.getPositionX() - shapeSize / 2) * scalingFactor + centerOfScreen.getX(), (obj.getPositionY() + height / 3.0        ) * scalingFactor + centerOfScreen.getY(),
-                };
-                shape = new Polygon(points);
-            }
-            case HEXAGON -> {
-                double sideLength = shapeSize / (2 * SIN_30 + 1);
-                double halfHeight = sideLength * COS_30;
-                double[] points = new double[] {
-                        (obj.getPositionX() - sideLength / 2) * scalingFactor + centerOfScreen.getX(), (obj.getPositionY() - halfHeight) * scalingFactor + centerOfScreen.getY(),
-                        (obj.getPositionX() + sideLength / 2) * scalingFactor + centerOfScreen.getX(), (obj.getPositionY() - halfHeight) * scalingFactor + centerOfScreen.getY(),
-                        (obj.getPositionX() + shapeSize  / 2) * scalingFactor + centerOfScreen.getX(), (obj.getPositionY()             ) * scalingFactor + centerOfScreen.getY(),
-                        (obj.getPositionX() + sideLength / 2) * scalingFactor + centerOfScreen.getX(), (obj.getPositionY() + halfHeight) * scalingFactor + centerOfScreen.getY(),
-                        (obj.getPositionX() - sideLength / 2) * scalingFactor + centerOfScreen.getX(), (obj.getPositionY() + halfHeight) * scalingFactor + centerOfScreen.getY(),
-                        (obj.getPositionX() - shapeSize  / 2) * scalingFactor + centerOfScreen.getX(), (obj.getPositionY()             ) * scalingFactor + centerOfScreen.getY(),
-                };
-                shape = new Polygon(points);
-            }
-        }
-        if (shape == null) {
-            throw new IllegalArgumentException("Unknown shape.");
-        }
+
         Color shapeColor = Theme.PRIMARY;
         if (obj.getHighlight() > 0.0) { // make brighter
             shapeColor = shapeColor.interpolate(Color.WHITE, obj.getHighlight());
@@ -80,7 +44,7 @@ public class GameObjectShapeMaker {
         if (obj.getStroke() <= 0.0) {
             shape.setFill(shapeColor);
         } else {
-            shape.setStrokeWidth(obj.getStroke());
+            shape.setStrokeWidth(obj.getStroke() * scalingFactor);
             shape.setStrokeType(StrokeType.INSIDE);
             shape.setStroke(shapeColor);
             shape.setFill(null);

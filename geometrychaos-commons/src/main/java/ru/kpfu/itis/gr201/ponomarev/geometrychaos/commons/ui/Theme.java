@@ -19,7 +19,12 @@ public class Theme {
     public static final Color ON_BACKGROUND = Color.web("#EFD2FF");
     public static final Color GAME_FIELD_BACKGROUND = Color.rgb(10, 0, 24);
     public static final Color SELECTED_OBJECT_OUTLINE = ACCENT;
-    public static final Color PLAYER = Color.web("#A581FF");
+    public static final Color[] PLAYERS_COLORS = new Color[] {
+            Color.web("#81F0FF"),
+            Color.web("#CEFC4E"),
+            Color.web("#FCB74E"),
+            Color.web("#FA6464"),
+    };
 
     public static final Color RAINBOW_START_COLOR = Color.rgb(255, 0, 0, 0.2);
 

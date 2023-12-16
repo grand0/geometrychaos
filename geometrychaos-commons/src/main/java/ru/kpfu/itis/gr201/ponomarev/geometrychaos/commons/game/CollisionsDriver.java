@@ -19,7 +19,6 @@ public class CollisionsDriver {
             ) {
                 Shape intersection = Shape.intersect(hitBox, objectShape);
                 if (intersection.getBoundsInParent().getWidth() > EPS) {
-                    System.out.println("HIT " + objectShape);
                     return true;
                 }
             }
