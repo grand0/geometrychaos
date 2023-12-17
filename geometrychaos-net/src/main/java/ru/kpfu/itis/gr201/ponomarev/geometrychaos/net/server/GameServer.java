@@ -124,6 +124,12 @@ public class GameServer {
                     playersIds.remove(sender.getPlayerId());
                     broadcastMessageSafely(message);
                     LOGGER.log(Level.INFO, "Player " + sender + " disconnected: " + message);
+
+                    if (playersIds.isEmpty() && gameStarted) {
+                        gameStarted = false;
+                        playersReady = 0;
+                        LOGGER.log(Level.INFO, "Game finished because all players left");
+                    }
                 } else {
                     LOGGER.log(Level.INFO, "Client disconnected");
                 }
@@ -225,6 +231,7 @@ public class GameServer {
         try {
             client.writeMessage(message);
         } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "Unexpected exception when sending message", e);
             PlayerDisconnectedMessage disconnectedMessage = new PlayerDisconnectedMessage(client.playerId, DisconnectionReason.LOST_CONNECTION);
             handleMessage(disconnectedMessage, client);
         }

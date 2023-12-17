@@ -3,7 +3,7 @@ package ru.kpfu.itis.gr201.ponomarev.geometrychaos.net.protocol.message;
 import java.util.function.Function;
 
 public enum MessageType {
-    PLAYER_POSITION_UPDATE(1, PlayerPositionUpdateMessage::new),
+    PLAYER_UPDATE(1, PlayerUpdateMessage::new),
     PLAYER_DASH(2, PlayerDashMessage::new),
     PLAYER_HIT(3, PlayerHitMessage::new),
     PLAYER_CONNECTION_REQUEST(4, PlayerConnectionRequestMessage::new),

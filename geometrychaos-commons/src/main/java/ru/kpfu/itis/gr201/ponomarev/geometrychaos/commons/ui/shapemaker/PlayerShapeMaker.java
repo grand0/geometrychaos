@@ -39,7 +39,7 @@ public class PlayerShapeMaker {
     public static Shape makeBacking(Player player, double scalingFactor) {
         Shape shape = makeShape(player, scalingFactor);
         applyTransforms(shape, player, scalingFactor);
-        applyColor(shape, player, player.isDamageCooldownActive() ? 0.1 : 0.4);
+        applyColor(shape, player, player.getHealthPoints() != 0 && player.isDamageCooldownActive() ? 0.1 : 0.4);
 
         shape.setViewOrder(PLAYER_VIEW_ORDER + 1);
         return shape;

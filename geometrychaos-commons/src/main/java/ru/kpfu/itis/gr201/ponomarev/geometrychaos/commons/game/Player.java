@@ -19,6 +19,9 @@ public class Player {
     private final String username;
     private PlayerState state = PlayerState.IN_ROOM;
 
+    private int totalHits;
+    private int totalDeaths;
+
     private double positionX;
     private double positionY;
     private double velocityX;
@@ -110,6 +113,8 @@ public class Player {
 
     public void restoreInitialState() {
         restoreHealthPoints();
+        this.totalHits = 0;
+        this.totalDeaths = 0;
         this.positionX = DEFAULT_SPAWN_POSITION.getX();
         this.positionY = DEFAULT_SPAWN_POSITION.getY();
         this.velocityX = 0;
@@ -126,7 +131,12 @@ public class Player {
     public void damage() {
         if (!isDamageCooldownActive() && !isUnderDashDefense() && this.healthPoints > 0) {
             this.healthPoints--;
+            this.totalHits++;
             lastDamageTakenTime = System.nanoTime();
+
+            if (this.healthPoints == 0) {
+                this.totalDeaths++;
+            }
         }
     }
 
@@ -174,5 +184,13 @@ public class Player {
 
     public void setState(PlayerState state) {
         this.state = state;
+    }
+
+    public int getTotalHits() {
+        return totalHits;
+    }
+
+    public int getTotalDeaths() {
+        return totalDeaths;
     }
 }

@@ -21,6 +21,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -45,6 +46,7 @@ import ru.kpfu.itis.gr201.ponomarev.geometrychaos.gameapp.gamemap.GameMapData;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.gameapp.gamemap.GameMapState;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.gameapp.net.client.GameClient;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.gameapp.ui.common.AudioTimeBar;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.gameapp.ui.overlay.GameResultsOverlay;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.gameapp.ui.screen.*;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.gameapp.util.GlobalAudioSpectrumProvider;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.net.protocol.ConnectionDenialReason;
@@ -56,7 +58,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
 
-// valid suppress because class is exposed only to javafx.graphics
 @SuppressWarnings("ClassEscapesDefinedScope")
 public class GameApplication extends Application {
 
@@ -130,6 +131,7 @@ public class GameApplication extends Application {
                     } catch (MapReadException | LevelReadException e) {
                         return false;
                     }
+                    initThisPlayer(0, "Player");
                     prepareGame();
                     return true;
                 }
@@ -214,6 +216,7 @@ public class GameApplication extends Application {
             loadAndPrepareGameTask.setOnSucceeded(event -> {
                 switchScene(gameFieldRoot);
                 GameClient.getInstance().thisPlayerReady();
+                playerReady(thisPlayer.getPlayerId());
             });
             loadAndPrepareGameTask.setOnFailed(event -> {
                 loadAndPrepareGameTask.getException().printStackTrace(System.err);
@@ -276,9 +279,9 @@ public class GameApplication extends Application {
         respawnAudioClip = new AudioClip(getClass().getResource("/sounds/respawn.mp3").toExternalForm());
 
         primaryStage.setScene(mainScene);
-//        primaryStage.setFullScreen(true);
-//        primaryStage.setFullScreenExitHint("");
-//        primaryStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
+        primaryStage.setFullScreen(true);
+        primaryStage.setFullScreenExitHint("");
+        primaryStage.setFullScreenExitKeyCombination(new KeyCodeCombination(KeyCode.F11));
         switchScene(mainMenuScreen);
         primaryStage.show();
     }
@@ -380,8 +383,8 @@ public class GameApplication extends Application {
     public void playerReady(int playerId) {
         for (Player player : players) {
             if (player.getPlayerId() == playerId) {
-                if (player.getState() != PlayerState.READY) {
-                    player.setState(PlayerState.READY);
+                if (player.getState() != PlayerState.IN_GAME) {
+                    player.setState(PlayerState.IN_GAME);
                 } else {
                     player.setState(PlayerState.IN_ROOM);
                 }
@@ -389,6 +392,57 @@ public class GameApplication extends Application {
             }
         }
         roomScreen.updateList();
+    }
+
+    public void playerHit(int playerId, Integer syncHealthPoints) {
+        for (Player player : players) {
+            if (player.getPlayerId() == playerId) {
+                player.damage();
+                if (syncHealthPoints != null) {
+                    player.setHealthPoints(syncHealthPoints);
+                }
+                break;
+            }
+        }
+        if (players.stream().allMatch(player -> player.getHealthPoints() == 0)) {
+            gameLoop.pause();
+            Duration timeToPlayFrom;
+            if (gameTimeControl.getCurrentTime().toSeconds() <= 5) {
+                timeToPlayFrom = new Duration(0);
+            } else {
+                timeToPlayFrom = gameTimeControl.getCurrentTime().subtract(Duration.seconds(5));
+            }
+
+            Timeline rateAnim = new Timeline(
+                    new KeyFrame(
+                            Duration.ZERO,
+                            new KeyValue(gameTimeControl.rateProperty(), 1.0),
+                            audioPlayer != null
+                                    ? new KeyValue(audioPlayer.rateProperty(), 1.0)
+                                    : null
+                    ),
+                    new KeyFrame(
+                            Duration.millis(1000),
+                            new KeyValue(gameTimeControl.rateProperty(), 0.001), // for some reason Timeline doesn't like it when rate becomes == 0.0
+                            audioPlayer != null
+                                    ? new KeyValue(audioPlayer.rateProperty(), 0.0)
+                                    : null
+                    )
+            );
+            rateAnim.setOnFinished(event -> {
+                players.forEach(Player::restoreHealthPoints);
+                respawnAudioClip.play();
+                gameLoop.play();
+                gameTimeControl.setRate(1.0);
+                gameTimeControl.jumpTo(timeToPlayFrom);
+                if (audioPlayer != null) {
+                    audioPlayer.setRate(1.0);
+                    audioPlayer.seek(timeToPlayFrom);
+                    audioPlayer.play();
+                }
+            });
+            rateAnim.play();
+        }
     }
 
     public void clientDisconnectedWithError(Throwable t) {
@@ -456,7 +510,7 @@ public class GameApplication extends Application {
         gameField.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         gameField.getPlayers().addAll(players);
         gameField.setThisPlayer(thisPlayer);
-        gameField.setHitThisPlayerCallback(this::hitPlayerCallback);
+        gameField.setHitThisPlayerCallback(this::thisPlayerHitCallback);
 
         GameObject lastObj = LevelManager.getInstance().getObjects()
                 .stream()
@@ -472,9 +526,20 @@ public class GameApplication extends Application {
                 new KeyFrame(
                         new Duration(levelDuration),
                         event -> {
-                            switchScene(roomScreen); // TODO: change to support single player mode
+                            GameResultsOverlay resultsOverlay = new GameResultsOverlay(players);
+                            resultsOverlay.setOnReturnPressed(() -> {
+                                if (GameClient.getInstance().isConnected()) {
+                                    switchScene(roomScreen);
+                                    GameClient.getInstance().thisPlayerReady();
+                                    playerReady(thisPlayer.getPlayerId());
+                                } else {
+                                    players.clear();
+                                    thisPlayer = null;
+                                    switchScene(levelSelector);
+                                }
+                            });
+                            gameFieldRoot.getChildren().add(resultsOverlay);
                             stopGame();
-                            GameClient.getInstance().thisPlayerReady();
                         },
                         new KeyValue(time, levelDuration)
                 )
@@ -575,51 +640,12 @@ public class GameApplication extends Application {
         }
 
         players.forEach(Player::update);
-        GameClient.getInstance().thisPlayerPositionUpdate(thisPlayer.getPositionX(), thisPlayer.getPositionY(), thisPlayer.getVelocityX(), thisPlayer.getVelocityY());
+        GameClient.getInstance().thisPlayerUpdate(thisPlayer.getPositionX(), thisPlayer.getPositionY(), thisPlayer.getVelocityX(), thisPlayer.getVelocityY(), thisPlayer.getHealthPoints());
     }
 
-    private void hitPlayerCallback() {
-        thisPlayer.damage();
+    private void thisPlayerHitCallback() {
         GameClient.getInstance().thisPlayerHit(thisPlayer.getHealthPoints());
-        if (players.stream().allMatch(player -> player.getHealthPoints() == 0)) {
-            gameLoop.pause();
-            Duration timeToPlayFrom;
-            if (gameTimeControl.getCurrentTime().toSeconds() <= 5) {
-                timeToPlayFrom = new Duration(0);
-            } else {
-                timeToPlayFrom = gameTimeControl.getCurrentTime().subtract(Duration.seconds(5));
-            }
-
-            Timeline rateAnim = new Timeline(
-                    new KeyFrame(
-                            Duration.ZERO,
-                            new KeyValue(gameTimeControl.rateProperty(), 1.0),
-                            audioPlayer != null
-                                    ? new KeyValue(audioPlayer.rateProperty(), 1.0)
-                                    : null
-                    ),
-                    new KeyFrame(
-                            Duration.millis(1000),
-                            new KeyValue(gameTimeControl.rateProperty(), 0.001), // for some reason Timeline doesn't like it when rate becomes == 0.0
-                            audioPlayer != null
-                                    ? new KeyValue(audioPlayer.rateProperty(), 0.0)
-                                    : null
-                    )
-            );
-            rateAnim.setOnFinished(event -> {
-                players.forEach(Player::restoreHealthPoints);
-                respawnAudioClip.play();
-                gameLoop.play();
-                gameTimeControl.setRate(1.0);
-                gameTimeControl.jumpTo(timeToPlayFrom);
-                if (audioPlayer != null) {
-                    audioPlayer.setRate(1.0);
-                    audioPlayer.seek(timeToPlayFrom);
-                    audioPlayer.play();
-                }
-            });
-            rateAnim.play();
-        }
+        playerHit(thisPlayer.getPlayerId(), null);
     }
 
     public List<Player> getPlayers() {

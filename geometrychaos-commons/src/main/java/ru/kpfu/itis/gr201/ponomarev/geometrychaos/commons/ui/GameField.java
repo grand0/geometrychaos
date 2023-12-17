@@ -135,16 +135,16 @@ public class GameField extends Pane {
                         .map((Player p) -> PlayerShapeMaker.make(p, scalingFactor))
                         .toList()
         );
-        List<Shape> transparentPlayersShapes = new LinkedList<>(
+        List<Shape> playersBackingsShapes = new LinkedList<>(
                 players.stream()
-                        .filter(player -> player.getHealthPoints() > 0 && player.getHealthPoints() < Player.DEFAULT_HEALTH_POINTS)
+                        .filter(player -> player.getHealthPoints() < Player.DEFAULT_HEALTH_POINTS)
                         .map((Player p) -> PlayerShapeMaker.makeBacking(p, scalingFactor))
                         .toList()
         );
 
         getChildren().addAll(objectsShapes);
         getChildren().addAll(playersShapes);
-        getChildren().addAll(transparentPlayersShapes);
+        getChildren().addAll(playersBackingsShapes);
 
         // TODO: move to some other place
         if (getTime() != 0 && thisPlayer != null) {

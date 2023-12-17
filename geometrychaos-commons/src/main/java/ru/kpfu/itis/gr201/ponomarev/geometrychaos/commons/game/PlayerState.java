@@ -3,7 +3,7 @@ package ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game;
 public enum PlayerState {
     IN_ROOM("In room"),
     DOWNLOADING("Downloading"),
-    READY("Ready"),
+    IN_GAME("In game"),
     ;
 
     private final String message;

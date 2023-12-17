@@ -17,12 +17,16 @@ import java.util.Arrays;
 
 public class GameClient {
 
+    private static final long PLAYER_UPDATE_INTERVAL_NS = 1_000_000_000 / 60;
+
     private static GameClient instance;
     private GameApplication app;
     private Socket socket;
     private ServerCommunicator serverCommunicator;
 
     private byte[] mapBytes;
+
+    private long lastThisPlayerUpdateTime;
 
     private GameClient() {}
 
@@ -76,6 +80,8 @@ public class GameClient {
     }
 
     public void uploadSelectedMap() throws IOException {
+        if (!isConnected()) return;
+
         GameMapData data = app.getSelectedGameMap();
         MapChangeMessage mapChangeMessage = new MapChangeMessage(data.data().length, data.name());
         serverCommunicator.writeMessage(mapChangeMessage);
@@ -93,6 +99,8 @@ public class GameClient {
     }
 
     public void startMapDownloading(int size) throws IOException {
+        if (!isConnected()) return;
+
         mapBytes = new byte[size];
 
         MapChunkRequestMessage mapChunkRequestMessage = new MapChunkRequestMessage(0);
@@ -100,6 +108,8 @@ public class GameClient {
     }
 
     public void thisPlayerReady() {
+        if (!isConnected()) return;
+
         PlayerReadyMessage readyMessage = new PlayerReadyMessage(serverCommunicator.getThisPlayerId());
         try {
             serverCommunicator.writeMessage(readyMessage);
@@ -111,6 +121,8 @@ public class GameClient {
     }
 
     public void saveChunkAndRequestNext(int offset, byte[] chunk) {
+        if (!isConnected()) return;
+
         System.arraycopy(chunk, 0, mapBytes, offset, chunk.length);
         try {
             if (offset + chunk.length == mapBytes.length) {
@@ -129,6 +141,8 @@ public class GameClient {
     }
 
     public void thisPlayerHit(int healthPoints) {
+        if (!isConnected()) return;
+
         PlayerHitMessage hitMessage = new PlayerHitMessage(serverCommunicator.getThisPlayerId(), healthPoints);
         try {
             serverCommunicator.writeMessage(hitMessage);
@@ -140,6 +154,8 @@ public class GameClient {
     }
 
     public void thisPlayerDash(double velocityX, double velocityY) {
+        if (!isConnected()) return;
+
         PlayerDashMessage dashMessage = new PlayerDashMessage(serverCommunicator.getThisPlayerId(), velocityX, velocityY);
         try {
             serverCommunicator.writeMessage(dashMessage);
@@ -150,14 +166,19 @@ public class GameClient {
         }
     }
 
-    public void thisPlayerPositionUpdate(double positionX, double positionY, double velocityX, double velocityY) {
-        PlayerPositionUpdateMessage positionUpdateMessage = new PlayerPositionUpdateMessage(serverCommunicator.getThisPlayerId(), positionX, positionY, velocityX, velocityY);
-        try {
-            serverCommunicator.writeMessage(positionUpdateMessage);
-        } catch (IOException e) {
-            e.printStackTrace(System.err);
-            disconnect();
-            app.clientDisconnectedWithError(e);
+    public void thisPlayerUpdate(double positionX, double positionY, double velocityX, double velocityY, int healthPoints) {
+        if (!isConnected()) return;
+
+        if (System.nanoTime() - lastThisPlayerUpdateTime >= PLAYER_UPDATE_INTERVAL_NS) {
+            lastThisPlayerUpdateTime = System.nanoTime();
+            PlayerUpdateMessage playerUpdateMessage = new PlayerUpdateMessage(serverCommunicator.getThisPlayerId(), positionX, positionY, velocityX, velocityY, healthPoints);
+            try {
+                serverCommunicator.writeMessage(playerUpdateMessage);
+            } catch (IOException e) {
+                e.printStackTrace(System.err);
+                disconnect();
+                app.clientDisconnectedWithError(e);
+            }
         }
     }
 
@@ -221,14 +242,19 @@ public class GameClient {
             case GAME_STARTED -> {
                 app.startGame();
             }
-            case PLAYER_POSITION_UPDATE -> {
-                PlayerPositionUpdateMessage positionUpdateMessage = (PlayerPositionUpdateMessage) message;
+            case PLAYER_UPDATE -> {
+                PlayerUpdateMessage playerUpdateMessage = (PlayerUpdateMessage) message;
                 for (Player player : app.getPlayers()) {
-                    if (player.getPlayerId() == positionUpdateMessage.getPlayerId()) {
-                        player.setPositionX(positionUpdateMessage.getPositionX());
-                        player.setPositionY(positionUpdateMessage.getPositionY());
-                        player.setVelocityX(positionUpdateMessage.getVelocityX());
-                        player.setVelocityY(positionUpdateMessage.getVelocityY());
+                    if (player.getPlayerId() == playerUpdateMessage.getPlayerId()) {
+                        player.setPositionX(playerUpdateMessage.getPositionX());
+                        player.setPositionY(playerUpdateMessage.getPositionY());
+                        player.setVelocityX(playerUpdateMessage.getVelocityX());
+                        player.setVelocityY(playerUpdateMessage.getVelocityY());
+                        if (playerUpdateMessage.getHealthPoints() < player.getHealthPoints()) {
+                            app.playerHit(playerUpdateMessage.getPlayerId(), playerUpdateMessage.getHealthPoints());
+                        } else {
+                            player.setHealthPoints(playerUpdateMessage.getHealthPoints());
+                        }
                         break;
                     }
                 }
@@ -246,14 +272,13 @@ public class GameClient {
             }
             case PLAYER_HIT -> {
                 PlayerHitMessage hitMessage = (PlayerHitMessage) message;
-                for (Player player : app.getPlayers()) {
-                    if (player.getPlayerId() == hitMessage.getPlayerId()) {
-                        player.damage();
-                        player.setHealthPoints(hitMessage.getHealthPoints());
-                    }
-                }
+                app.playerHit(hitMessage.getPlayerId(), hitMessage.getHealthPoints());
             }
         }
+    }
+
+    public boolean isConnected() {
+        return serverCommunicator != null && serverCommunicator.isConnected;
     }
 
     private static class ServerCommunicator implements Runnable {
