@@ -25,8 +25,7 @@ public class MapDataViewer extends GridPane {
         setBackground(Background.fill(Theme.BACKGROUND.brighter()));
 
         mapName = new Label();
-        mapName.setFont(Theme.HEADLINE_FONT);
-        mapName.setTextFill(Theme.ON_BACKGROUND);
+        mapName.getStyleClass().add("headline");
         status = new Label();
         status.setTextFill(Theme.ON_BACKGROUND);
         loadingSpinner = new LoadingSpinner();

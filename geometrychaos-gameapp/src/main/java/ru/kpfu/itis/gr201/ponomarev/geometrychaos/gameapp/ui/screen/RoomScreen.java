@@ -4,24 +4,22 @@ import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
+import javafx.scene.shape.Shape;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.Player;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui.Theme;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui.shapemaker.PlayerShapeMaker;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.gameapp.gamemap.GameMapData;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.gameapp.gamemap.GameMapState;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.gameapp.ui.common.MapDataViewer;
 
 public class RoomScreen extends Screen {
 
-    private final VBox playersVBox;
+    private final GridPane playersList;
     private final MapDataViewer mapDataViewer;
     private Integer thisPlayerId;
 
@@ -39,22 +37,20 @@ public class RoomScreen extends Screen {
         this.mapData = mapData;
         this.mapState = mapState;
 
-        ScrollPane playersScrollPane = new ScrollPane();
-        playersScrollPane.setBackground(Background.fill(Theme.BACKGROUND));
-        playersScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        playersScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
-        playersScrollPane.setMinWidth(200);
-        playersScrollPane.setMaxWidth(200);
-        playersScrollPane.setMinHeight(200);
-        playersScrollPane.setMaxHeight(200);
-        StackPane.setAlignment(playersScrollPane, Pos.BOTTOM_LEFT);
-        StackPane.setMargin(playersScrollPane, new Insets(20));
+        playersList = new GridPane();
+        playersList.setVgap(20);
+        playersList.setPrefWidth(USE_COMPUTED_SIZE);
+        playersList.setPrefHeight(USE_COMPUTED_SIZE);
+        playersList.setAlignment(Pos.CENTER);
+        playersList.getColumnConstraints().addAll(
+                new ColumnConstraints(50, 50, 50, Priority.NEVER, HPos.CENTER, true),
+                new ColumnConstraints(200, 200, 200, Priority.NEVER, HPos.LEFT, true),
+                new ColumnConstraints(200, 200, 200, Priority.NEVER, HPos.LEFT, true)
+        );
+        StackPane.setAlignment(playersList, Pos.CENTER);
 
-        playersVBox = new VBox();
         this.players.addListener((ListChangeListener<? super Player>) c -> updateList());
         updateList();
-        playersScrollPane.setContent(playersVBox);
-        playersScrollPane.setBackground(Background.fill(Theme.BACKGROUND));
 
         mapDataViewer = new MapDataViewer(this.mapData, this.mapState);
         StackPane.setAlignment(mapDataViewer, Pos.BOTTOM_CENTER);
@@ -70,26 +66,19 @@ public class RoomScreen extends Screen {
         StackPane.setAlignment(readyBtn, Pos.BOTTOM_RIGHT);
         StackPane.setMargin(readyBtn, new Insets(20));
 
-        getChildren().addAll(playersScrollPane, mapDataViewer, readyBtn);
+        getChildren().addAll(playersList, mapDataViewer, readyBtn);
     }
 
     public void updateList() {
         Platform.runLater(() -> {
-            playersVBox.getChildren().setAll(
-                    players.stream()
-                            .map(this::makePlayerListItem)
-                            .toList()
-            );
+            playersList.getChildren().clear();
+            players.forEach(player -> {
+                Shape playerShape = PlayerShapeMaker.makeDefault(player);
+                Label usernameLabel = new Label(player.getUsername());
+                Label stateLabel = new Label(player.getState().getMessage());
+                playersList.addRow(playersList.getRowCount(), playerShape, usernameLabel, stateLabel);
+            });
         });
-    }
-
-    private Node makePlayerListItem(Player player) {
-        StringBuilder text = new StringBuilder(player.getUsername());
-        if (player.getPlayerId() != thisPlayerId) {
-            text.append(" - ").append(player.getState());
-        }
-        Label label = new Label(text.toString());
-        return label;
     }
 
     public Runnable getOnSelectPressed() {

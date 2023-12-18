@@ -1,5 +1,6 @@
 package ru.kpfu.itis.gr201.ponomarev.geometrychaos.net.server;
 
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.net.model.Player;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.net.protocol.ConnectionDenialReason;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.net.protocol.DisconnectionReason;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.net.protocol.ShallowPlayer;
@@ -11,6 +12,7 @@ import java.lang.System.Logger.Level;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
+import java.util.stream.IntStream;
 
 public class GameServer {
 
@@ -19,11 +21,8 @@ public class GameServer {
 
     private final List<GameClient> clients = new LinkedList<>();
 
-    private int playerIdCounter = 0;
-    private final Set<Integer> playersIds = new HashSet<>();
+    private final NavigableSet<Integer> freePlayerIds = Collections.synchronizedNavigableSet(new TreeSet<>());
 
-    private int playersReady = 0;
-//    private boolean gameRunning = false;
     private boolean gameStarted = false;
 
     private String currentMapName;
@@ -33,14 +32,14 @@ public class GameServer {
     private byte[] changingMapBytes;
     private int changingMapDownloadedBytes;
 
-    private final Set<Integer> playersDownloadedMapIds = new HashSet<>(); // TODO: replace all sets of ids with one list of players
-
     public static void main(String[] args) {
         GameServer server = new GameServer();
         server.start();
     }
 
     public void start() {
+        IntStream.range(0, MAX_PLAYERS_COUNT).forEach(freePlayerIds::add);
+
         try {
             try (ServerSocket serverSocket = new ServerSocket(ServerConfig.PORT)) {
                 LOGGER.log(Level.INFO, "Server ready at port " + serverSocket.getLocalPort());
@@ -70,7 +69,7 @@ public class GameServer {
                     sendMessageSafely(denialMessage, sender);
                     sender.stop();
                     clients.remove(sender);
-                } else if (playersIds.size() >= MAX_PLAYERS_COUNT) {
+                } else if (freePlayerIds.isEmpty()) {
                     LOGGER.log(Level.INFO, "Denied player connection: room is full");
                     Message denialMessage = new PlayerConnectionDenialMessage(ConnectionDenialReason.ROOM_FULL);
                     sendMessageSafely(denialMessage, sender);
@@ -80,10 +79,8 @@ public class GameServer {
                     PlayerConnectionRequestMessage request = (PlayerConnectionRequestMessage) message;
                     String username = request.getUsername().strip();
                     if (!username.isEmpty() && username.length() <= 32) {
-                        int id = playerIdCounter++;
-                        playersIds.add(id);
-                        sender.setPlayerId(id);
-                        sender.setUsername(username);
+                        int id = freePlayerIds.pollFirst();
+                        sender.setPlayer(new Player(id, username));
                         Message connectedMessage = new PlayerConnectedMessage(id, username);
                         for (GameClient client : clients) {
                             if (!client.equals(sender)) {
@@ -93,8 +90,8 @@ public class GameServer {
                         Message connectionApprovedMessage = new PlayerConnectionApprovedMessage(
                                 new ShallowPlayer(id, username),
                                 clients.stream()
-                                        .filter(client -> client.getPlayerId() != null && client.getUsername() != null)
-                                        .map(client -> new ShallowPlayer(client.getPlayerId(), client.getUsername()))
+                                        .filter(client -> client.getPlayer() != null)
+                                        .map(client -> client.getPlayer().toShallowPlayer())
                                         .toList()
                         );
                         sendMessageSafely(connectionApprovedMessage, sender);
@@ -102,7 +99,11 @@ public class GameServer {
                             Message mapMessage = new MapChangeMessage(currentMapBytes.length, currentMapName);
                             sendMessageSafely(mapMessage, sender);
                         }
-                        for (int playerDownloadedId : playersDownloadedMapIds) {
+                        for (int playerDownloadedId : clients.stream()
+                                .filter(client -> client.getPlayer() != null)
+                                .filter(client -> client.getPlayer().isDownloadedMap())
+                                .map(client -> client.getPlayer().getId())
+                                .toList()) {
                             Message downloadedMessage = new MapDownloadedMessage(playerDownloadedId);
                             sendMessageSafely(downloadedMessage, sender);
                         }
@@ -120,14 +121,13 @@ public class GameServer {
             case PLAYER_DISCONNECTED -> {
                 sender.stop();
                 clients.remove(sender);
-                if (sender.getPlayerId() != null) {
-                    playersIds.remove(sender.getPlayerId());
+                if (sender.getPlayer() != null) {
+                    freePlayerIds.add(sender.getPlayer().getId());
                     broadcastMessageSafely(message);
                     LOGGER.log(Level.INFO, "Player " + sender + " disconnected: " + message);
 
-                    if (playersIds.isEmpty() && gameStarted) {
+                    if (freePlayerIds.size() == MAX_PLAYERS_COUNT && gameStarted) {
                         gameStarted = false;
-                        playersReady = 0;
                         LOGGER.log(Level.INFO, "Game finished because all players left");
                     }
                 } else {
@@ -146,19 +146,20 @@ public class GameServer {
                     MapChunkMessage mapChunkMessage = (MapChunkMessage) message;
                     int mapChunkLength = mapChunkMessage.getMapChunk().length;
                     System.arraycopy(mapChunkMessage.getMapChunk(), 0, changingMapBytes, mapChunkMessage.getOffset(), mapChunkLength);
-//                    LOGGER.log(Level.INFO, "Got chunk: " + mapChunkMessage);
                     changingMapDownloadedBytes += mapChunkLength;
                     if (changingMapDownloadedBytes == changingMapBytes.length) {
                         currentMapName = changingMapName;
                         currentMapBytes = changingMapBytes;
-                        playersDownloadedMapIds.clear();
-                        playersDownloadedMapIds.add(sender.getPlayerId());
+                        clients.stream()
+                                .filter(client -> client.getPlayer() != null)
+                                .forEach(client -> client.getPlayer().setDownloadedMap(false));
+                        sender.getPlayer().setDownloadedMap(true);
 
                         Message serverMapDownloadedMessage = new MapDownloadedMessage(null);
                         sendMessageSafely(serverMapDownloadedMessage, sender);
 
                         Message mapChangeMessage = new MapChangeMessage(currentMapBytes.length, currentMapName);
-                        Message clientMapDownloadedMessage = new MapDownloadedMessage(sender.getPlayerId());
+                        Message clientMapDownloadedMessage = new MapDownloadedMessage(sender.getPlayer().getId());
                         for (GameClient client : clients) {
                             if (!client.equals(sender)) {
                                 sendMessageSafely(mapChangeMessage, client);
@@ -177,13 +178,11 @@ public class GameServer {
                         byte[] chunk = Arrays.copyOfRange(currentMapBytes, request.getOffset(), Math.min(currentMapBytes.length, request.getOffset() + ServerConfig.MAP_CHUNK_LENGTH));
                         MapChunkMessage chunkMessage = new MapChunkMessage(request.getOffset(), chunk);
                         sendMessageSafely(chunkMessage, sender);
-
-//                        LOGGER.log(Level.INFO, "Sent chunk to " + sender + ": " + chunkMessage);
                     }
                 }
             }
             case MAP_DOWNLOADED -> {
-                playersDownloadedMapIds.add(sender.getPlayerId());
+                sender.getPlayer().setDownloadedMap(true);
                 for (GameClient client : clients) {
                     if (!client.equals(sender)) {
                         sendMessageSafely(message, client);
@@ -197,10 +196,13 @@ public class GameServer {
                     }
                 }
                 if (!gameStarted) {
-                    playersReady++;
+                    sender.getPlayer().setInGame(true);
                     LOGGER.log(Level.INFO, sender + " is ready");
 
-                    if (playersReady == playersIds.size()) {
+                    boolean allPlayersReady = clients.stream()
+                            .filter(client -> client.getPlayer() != null)
+                            .allMatch(client -> client.getPlayer().isInGame());
+                    if (allPlayersReady) {
                         gameStarted = true;
                         Message startedMessage = new GameStartedMessage();
                         broadcastMessageSafely(startedMessage);
@@ -208,10 +210,13 @@ public class GameServer {
                         LOGGER.log(Level.INFO, "Game started");
                     }
                 } else {
-                    playersReady--;
+                    sender.getPlayer().setInGame(false);
                     LOGGER.log(Level.INFO, sender + " finished");
 
-                    if (playersReady == 0) {
+                    boolean allPlayersFinished = clients.stream()
+                            .filter(client -> client.getPlayer() != null)
+                            .noneMatch(client -> client.getPlayer().isInGame());
+                    if (allPlayersFinished) {
                         gameStarted = false;
                         LOGGER.log(Level.INFO, "Game finished");
                     }
@@ -232,8 +237,10 @@ public class GameServer {
             client.writeMessage(message);
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "Unexpected exception when sending message", e);
-            PlayerDisconnectedMessage disconnectedMessage = new PlayerDisconnectedMessage(client.playerId, DisconnectionReason.LOST_CONNECTION);
-            handleMessage(disconnectedMessage, client);
+            if (client.getPlayer() != null) {
+                PlayerDisconnectedMessage disconnectedMessage = new PlayerDisconnectedMessage(client.getPlayer().getId(), DisconnectionReason.LOST_CONNECTION);
+                handleMessage(disconnectedMessage, client);
+            }
         }
     }
 
@@ -247,8 +254,7 @@ public class GameServer {
 
         private final Socket socket;
         private final GameServer server;
-        private Integer playerId;
-        private String username;
+        private Player player;
 
         private boolean isConnected = true;
 
@@ -272,8 +278,10 @@ public class GameServer {
                     handleMessage(message);
                 }
             } catch (IOException e) {
-                Message message = new PlayerDisconnectedMessage(playerId, DisconnectionReason.LOST_CONNECTION);
-                server.handleMessage(message, this);
+                if (player != null) {
+                    Message message = new PlayerDisconnectedMessage(player.getId(), DisconnectionReason.LOST_CONNECTION);
+                    server.handleMessage(message, this);
+                }
             }
         }
 
@@ -281,25 +289,17 @@ public class GameServer {
             socket.getOutputStream().write(message.getRaw());
         }
 
-        public Integer getPlayerId() {
-            return playerId;
+        public Player getPlayer() {
+            return player;
         }
 
-        public void setPlayerId(int playerId) {
-            this.playerId = playerId;
-        }
-
-        public String getUsername() {
-            return username;
-        }
-
-        public void setUsername(String username) {
-            this.username = username;
+        public void setPlayer(Player player) {
+            this.player = player;
         }
 
         @Override
         public String toString() {
-            return username + " (" + playerId + ")";
+            return player.getUsername() + " (" + player.getId() + ")";
         }
 
         public void stop() {

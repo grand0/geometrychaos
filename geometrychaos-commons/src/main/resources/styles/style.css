@@ -1,0 +1,30 @@
+.root {
+    -fx-background-color: #191825;
+    -fx-font-size: 14px;
+}
+
+.button, .text-field, .spinner, .combo-box {
+    -fx-background-color: #2f2e48;
+    -fx-text-fill: #EFD2FF;
+    -fx-font-family: "Rubik";
+}
+
+.button:hover, .combo-box:hover {
+    -fx-background-color: #3e3e65;
+}
+
+.label {
+    -fx-text-fill: #EFD2FF;
+    -fx-font-family: "Rubik";
+}
+
+.headline {
+    -fx-text-fill: #EFD2FF;
+    -fx-font-family: "Gruppo";
+    -fx-font-size: 36px;
+}
+
+.error {
+    -fx-text-fill: #f12958;
+    -fx-font-family: "Rubik";
+}

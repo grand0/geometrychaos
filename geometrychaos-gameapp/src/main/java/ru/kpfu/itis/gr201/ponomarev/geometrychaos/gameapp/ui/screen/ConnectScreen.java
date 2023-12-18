@@ -1,12 +1,12 @@
 package ru.kpfu.itis.gr201.ponomarev.geometrychaos.gameapp.ui.screen;
 
+import javafx.geometry.HPos;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
-import javafx.scene.paint.Color;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui.Theme;
 
 import java.util.function.Consumer;
@@ -27,14 +27,19 @@ public class ConnectScreen extends Screen {
                 onConnectPressed.accept(new ConnectScreenData(usernameField.getText(), hostField.getText()));
             }
         });
+        GridPane.setHalignment(connectBtn, HPos.CENTER);
 
         GridPane gridPane = new GridPane();
         gridPane.setAlignment(Pos.CENTER);
+        gridPane.setVgap(10);
+        gridPane.setHgap(10);
         gridPane.addRow(0, makeLabel("Username"), usernameField);
         gridPane.addRow(1, makeLabel("Host"), hostField);
         gridPane.add(connectBtn, 0, 2, 2, 1);
         errorLabel = new Label();
-        errorLabel.setTextFill(Color.CRIMSON);
+        errorLabel.getStyleClass().add("error");
+        errorLabel.setMaxWidth(500);
+        errorLabel.setWrapText(true);
         gridPane.add(errorLabel, 0, 3, 2, 1);
         gridPane.setMinSize(USE_PREF_SIZE, USE_PREF_SIZE);
         gridPane.setMaxSize(USE_PREF_SIZE, USE_PREF_SIZE);

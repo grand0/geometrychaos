@@ -17,12 +17,12 @@ import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.LevelManager;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.Player;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui.shapemaker.GameObjectShapeMaker;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui.shapemaker.PlayerShapeMaker;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.CollisionsDriver;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 public class GameField extends Pane {
 
@@ -32,9 +32,8 @@ public class GameField extends Pane {
 
     private boolean listenToObjectsChanges = true;
 
-    private Player thisPlayer;
     private final List<Player> players;
-    private Runnable hitThisPlayerCallback;
+    private Consumer<List<Shape>> newFrameCallback;
 
     private final IntegerProperty time = new IntegerPropertyBase() {
         @Override
@@ -146,13 +145,13 @@ public class GameField extends Pane {
         getChildren().addAll(playersShapes);
         getChildren().addAll(playersBackingsShapes);
 
-        // TODO: move to some other place
-        if (getTime() != 0 && thisPlayer != null) {
-            boolean hit = CollisionsDriver.checkPlayerObjectCollisions(thisPlayer, objectsShapes, scalingFactor);
-            if (hit) {
-                hitThisPlayerCallback.run();
-            }
+        if (newFrameCallback != null && getTime() != 0) {
+            newFrameCallback.accept(objectsShapes);
         }
+    }
+
+    public double getScalingFactor() {
+        return getWidth() / GameField.FIELD_WIDTH;
     }
 
     public int getTime() {
@@ -171,19 +170,11 @@ public class GameField extends Pane {
         return players;
     }
 
-    public Runnable getHitThisPlayerCallback() {
-        return hitThisPlayerCallback;
+    public Consumer<List<Shape>> getNewFrameCallback() {
+        return newFrameCallback;
     }
 
-    public void setHitThisPlayerCallback(Runnable hitThisPlayerCallback) {
-        this.hitThisPlayerCallback = hitThisPlayerCallback;
-    }
-
-    public Player getThisPlayer() {
-        return thisPlayer;
-    }
-
-    public void setThisPlayer(Player thisPlayer) {
-        this.thisPlayer = thisPlayer;
+    public void setNewFrameCallback(Consumer<List<Shape>> newFrameCallback) {
+        this.newFrameCallback = newFrameCallback;
     }
 }

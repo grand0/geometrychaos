@@ -28,13 +28,11 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.media.AudioClip;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
+import javafx.scene.shape.Shape;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.GameObject;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.LevelManager;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.Player;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.PlayerState;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.*;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.io.exception.LevelReadException;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.io.exception.MapReadException;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.io.level.LevelIO;
@@ -104,8 +102,7 @@ public class GameApplication extends Application {
         }
 
         awaitingPlayersLabel = new Label("Awaiting players...");
-        awaitingPlayersLabel.setFont(Theme.HEADLINE_FONT);
-        awaitingPlayersLabel.setTextFill(Theme.ON_BACKGROUND);
+        awaitingPlayersLabel.getStyleClass().add("headline");
         StackPane.setAlignment(awaitingPlayersLabel, Pos.CENTER);
 
         mainMenuScreen = new MainMenuScreen();
@@ -123,27 +120,22 @@ public class GameApplication extends Application {
             }
 
             switchScene(new LoadingScreen());
-            Task<Boolean> task = new Task<>() {
+            Task<Void> task = new Task<>() {
                 @Override
-                protected Boolean call() {
-                    try {
-                        loadMap(file);
-                    } catch (MapReadException | LevelReadException e) {
-                        return false;
-                    }
+                protected Void call() throws MapReadException, LevelReadException {
+                    loadMap(file);
                     initThisPlayer(0, "Player");
                     prepareGame();
-                    return true;
+                    return null;
                 }
             };
             task.setOnSucceeded(event -> {
-                boolean loaded = task.resultNow();
-                if (loaded) {
-                    switchScene(gameFieldRoot);
-                    startGame();
-                } else {
-                    switchScene(levelSelector);
-                }
+                switchScene(gameFieldRoot);
+                startGame();
+            });
+            task.setOnFailed(event -> {
+                task.getException().printStackTrace(System.err);
+                switchScene(levelSelector);
             });
             new Thread(task).start();
         });
@@ -197,6 +189,7 @@ public class GameApplication extends Application {
             });
             uploadTask.setOnSucceeded(event -> {
                 players.forEach(player -> player.setState(PlayerState.DOWNLOADING));
+                thisPlayer.setState(PlayerState.IN_ROOM);
                 roomScreen.updateList();
                 roomScreen.setReadyButtonVisible(true);
             });
@@ -240,6 +233,7 @@ public class GameApplication extends Application {
         pressedKeysInGame = new HashSet<>();
 
         mainScene = new Scene(levelSelector, 1280, 720);
+        Theme.applyStylesheetsToScene(mainScene);
         mainScene.setOnKeyPressed(event -> {
             if (mainScene.getRoot() == mainMenuScreen) {
                 if (event.getCode() == KeyCode.ESCAPE) {
@@ -263,7 +257,7 @@ public class GameApplication extends Application {
                         switchScene(mainMenuScreen);
                     } else if (paused) {
                         resumeGame();
-                    } else {
+                    } else if (!GameClient.getInstance().isConnected()) {
                         pauseGame();
                     }
                 }
@@ -367,6 +361,8 @@ public class GameApplication extends Application {
     public void mapDownloaded(byte[] mapBytes) {
         selectedGameMapProperty().set(new GameMapData(getSelectedGameMap().name(), mapBytes));
         selectedGameMapStateProperty().set(GameMapState.FINISHED);
+        thisPlayer.setState(PlayerState.IN_ROOM);
+        roomScreen.updateList();
         roomScreen.setReadyButtonVisible(true);
     }
 
@@ -509,8 +505,7 @@ public class GameApplication extends Application {
         gameField.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         gameField.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         gameField.getPlayers().addAll(players);
-        gameField.setThisPlayer(thisPlayer);
-        gameField.setHitThisPlayerCallback(this::thisPlayerHitCallback);
+        gameField.setNewFrameCallback(this::newFrameCallback);
 
         GameObject lastObj = LevelManager.getInstance().getObjects()
                 .stream()
@@ -550,6 +545,7 @@ public class GameApplication extends Application {
         StackPane.setMargin(timeBar, new Insets(20));
 
         gameFieldRoot = new StackPane(gameField, timeBar, awaitingPlayersLabel);
+        gameFieldRoot.setAlignment(Pos.TOP_LEFT);
         InvalidationListener resizeListener = obs -> {
             double width = gameFieldRoot.getWidth();
             double height = gameFieldRoot.getHeight();
@@ -565,7 +561,7 @@ public class GameApplication extends Application {
     }
 
     private void switchScene(Parent node) {
-        mainScene.setRoot(node);
+        Platform.runLater(() -> mainScene.setRoot(node));
     }
 
     public void startGame() {
@@ -643,9 +639,12 @@ public class GameApplication extends Application {
         GameClient.getInstance().thisPlayerUpdate(thisPlayer.getPositionX(), thisPlayer.getPositionY(), thisPlayer.getVelocityX(), thisPlayer.getVelocityY(), thisPlayer.getHealthPoints());
     }
 
-    private void thisPlayerHitCallback() {
-        GameClient.getInstance().thisPlayerHit(thisPlayer.getHealthPoints());
-        playerHit(thisPlayer.getPlayerId(), null);
+    private void newFrameCallback(List<Shape> objectsShapes) {
+        boolean hit = CollisionsDriver.checkPlayerObjectCollisions(thisPlayer, objectsShapes, gameField.getScalingFactor());
+        if (hit) {
+            GameClient.getInstance().thisPlayerHit(thisPlayer.getHealthPoints());
+            playerHit(thisPlayer.getPlayerId(), null);
+        }
     }
 
     public List<Player> getPlayers() {

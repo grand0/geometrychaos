@@ -36,6 +36,12 @@ public class PlayerShapeMaker {
         return playerShape;
     }
 
+    public static Shape makeDefault(Player player) {
+        Shape shape = makeShape(player, 1.0);
+        applyColor(shape, player, 1.0);
+        return shape;
+    }
+
     public static Shape makeBacking(Player player, double scalingFactor) {
         Shape shape = makeShape(player, scalingFactor);
         applyTransforms(shape, player, scalingFactor);

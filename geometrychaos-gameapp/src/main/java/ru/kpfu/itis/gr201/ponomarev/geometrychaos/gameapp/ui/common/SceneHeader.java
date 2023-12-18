@@ -13,8 +13,7 @@ public class SceneHeader extends VBox {
 
     public SceneHeader(String text) {
         Label headerText = new Label(text);
-        headerText.setFont(Theme.HEADLINE_FONT);
-        headerText.setTextFill(Theme.ON_BACKGROUND);
+        headerText.getStyleClass().add("headline");
         headerText.setPadding(new Insets(20));
         getChildren().addAll(headerText, AudioResponsiveHeaderDivider.getShape());
     }

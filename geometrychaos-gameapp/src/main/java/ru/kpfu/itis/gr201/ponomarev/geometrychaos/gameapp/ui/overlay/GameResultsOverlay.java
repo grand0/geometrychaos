@@ -44,8 +44,7 @@ public class GameResultsOverlay extends StackPane {
 
             GameResultRank rank = GameResultRank.rankPlayer(player);
             Label rankLabel = new Label(rank == null ? null : rank.getDisplayString());
-            rankLabel.setTextFill(Theme.ON_BACKGROUND);
-            rankLabel.setFont(Theme.HEADLINE_FONT);
+            rankLabel.getStyleClass().add("headline");
             GridPane.setHalignment(rankLabel, HPos.CENTER);
             GridPane.setValignment(rankLabel, VPos.CENTER);
 

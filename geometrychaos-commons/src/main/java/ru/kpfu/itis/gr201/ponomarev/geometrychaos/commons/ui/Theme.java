@@ -1,5 +1,6 @@
 package ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui;
 
+import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
@@ -28,5 +29,15 @@ public class Theme {
 
     public static final Color RAINBOW_START_COLOR = Color.rgb(255, 0, 0, 0.2);
 
-    public static final Font HEADLINE_FONT = Font.loadFont(Theme.class.getResourceAsStream("/fonts/Gruppo.ttf"), 36);
+//    public static final Font HEADLINE_FONT = Font.loadFont(Theme.class.getResourceAsStream("/fonts/Gruppo.ttf"), 36);
+//    public static final Font LABEL_FONT = Font.loadFont(Theme.class.getResourceAsStream("/fonts/Rubik-Regular.ttf"), 14);
+
+    static {
+        Font.loadFont(Theme.class.getResourceAsStream("/fonts/Gruppo.ttf"), 36);
+        Font.loadFont(Theme.class.getResourceAsStream("/fonts/Rubik-Regular.ttf"), 14);
+    }
+
+    public static void applyStylesheetsToScene(Scene scene) {
+        scene.getStylesheets().add(Theme.class.getResource("/styles/style.css").toExternalForm());
+    }
 }

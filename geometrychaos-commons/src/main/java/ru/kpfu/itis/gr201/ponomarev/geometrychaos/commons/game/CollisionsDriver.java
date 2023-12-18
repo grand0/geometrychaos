@@ -1,7 +1,6 @@
 package ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game;
 
 import javafx.scene.shape.Shape;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.Player;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui.shapemaker.PlayerShapeMaker;
 
 import java.util.List;
