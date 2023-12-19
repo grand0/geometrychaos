@@ -240,7 +240,8 @@ public class GameClient {
                 app.playerReady(readyMessage.getPlayerId());
             }
             case GAME_STARTED -> {
-                app.startGame();
+                GameStartedMessage gameStartedMessage = (GameStartedMessage) message;
+                app.startGame(gameStartedMessage.getSeed());
             }
             case PLAYER_UPDATE -> {
                 PlayerUpdateMessage playerUpdateMessage = (PlayerUpdateMessage) message;

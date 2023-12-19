@@ -72,6 +72,7 @@ public class GameApplication extends Application {
 
     private MediaPlayer audioPlayer;
     private AudioClip respawnAudioClip;
+    private AudioClip hitAudioClip;
 
     private Timeline gameTimeControl;
     private Timeline gameLoop;
@@ -235,7 +236,9 @@ public class GameApplication extends Application {
         mainScene = new Scene(levelSelector, 1280, 720);
         Theme.applyStylesheetsToScene(mainScene);
         mainScene.setOnKeyPressed(event -> {
-            if (mainScene.getRoot() == mainMenuScreen) {
+            if (event.getCode() == KeyCode.F11) {
+                primaryStage.setFullScreen(!primaryStage.isFullScreen());
+            } else if (mainScene.getRoot() == mainMenuScreen) {
                 if (event.getCode() == KeyCode.ESCAPE) {
                     Platform.exit();
                 }
@@ -271,11 +274,11 @@ public class GameApplication extends Application {
         });
 
         respawnAudioClip = new AudioClip(getClass().getResource("/sounds/respawn.mp3").toExternalForm());
+        hitAudioClip = new AudioClip(getClass().getResource("/sounds/huh.wav").toExternalForm());
 
         primaryStage.setScene(mainScene);
         primaryStage.setFullScreen(true);
         primaryStage.setFullScreenExitHint("");
-        primaryStage.setFullScreenExitKeyCombination(new KeyCodeCombination(KeyCode.F11));
         switchScene(mainMenuScreen);
         primaryStage.show();
     }
@@ -312,6 +315,9 @@ public class GameApplication extends Application {
 
     public void addPlayer(int playerId, String username) {
         Player player = new Player(playerId, username);
+        if (getSelectedGameMap() != null) {
+            player.setState(PlayerState.DOWNLOADING);
+        }
         players.add(player);
     }
 
@@ -391,53 +397,60 @@ public class GameApplication extends Application {
     }
 
     public void playerHit(int playerId, Integer syncHealthPoints) {
+        boolean damaged = false;
         for (Player player : players) {
             if (player.getPlayerId() == playerId) {
-                player.damage();
+                damaged = player.damage();
                 if (syncHealthPoints != null) {
+                    if (syncHealthPoints < player.getHealthPoints()) {
+                        damaged = true;
+                    }
                     player.setHealthPoints(syncHealthPoints);
                 }
                 break;
             }
         }
-        if (players.stream().allMatch(player -> player.getHealthPoints() == 0)) {
-            gameLoop.pause();
-            Duration timeToPlayFrom;
-            if (gameTimeControl.getCurrentTime().toSeconds() <= 5) {
-                timeToPlayFrom = new Duration(0);
-            } else {
-                timeToPlayFrom = gameTimeControl.getCurrentTime().subtract(Duration.seconds(5));
-            }
-
-            Timeline rateAnim = new Timeline(
-                    new KeyFrame(
-                            Duration.ZERO,
-                            new KeyValue(gameTimeControl.rateProperty(), 1.0),
-                            audioPlayer != null
-                                    ? new KeyValue(audioPlayer.rateProperty(), 1.0)
-                                    : null
-                    ),
-                    new KeyFrame(
-                            Duration.millis(1000),
-                            new KeyValue(gameTimeControl.rateProperty(), 0.001), // for some reason Timeline doesn't like it when rate becomes == 0.0
-                            audioPlayer != null
-                                    ? new KeyValue(audioPlayer.rateProperty(), 0.0)
-                                    : null
-                    )
-            );
-            rateAnim.setOnFinished(event -> {
-                players.forEach(Player::restoreHealthPoints);
-                respawnAudioClip.play();
-                gameLoop.play();
-                gameTimeControl.setRate(1.0);
-                gameTimeControl.jumpTo(timeToPlayFrom);
-                if (audioPlayer != null) {
-                    audioPlayer.setRate(1.0);
-                    audioPlayer.seek(timeToPlayFrom);
-                    audioPlayer.play();
+        if (damaged) {
+            hitAudioClip.play();
+            if (players.stream().allMatch(player -> player.getHealthPoints() == 0)) {
+                gameLoop.pause();
+                Duration timeToPlayFrom;
+                if (gameTimeControl.getCurrentTime().toSeconds() <= 5) {
+                    timeToPlayFrom = new Duration(0);
+                } else {
+                    timeToPlayFrom = gameTimeControl.getCurrentTime().subtract(Duration.seconds(5));
                 }
-            });
-            rateAnim.play();
+
+                Timeline rateAnim = new Timeline(
+                        new KeyFrame(
+                                Duration.ZERO,
+                                new KeyValue(gameTimeControl.rateProperty(), 1.0),
+                                audioPlayer != null
+                                        ? new KeyValue(audioPlayer.rateProperty(), 1.0)
+                                        : null
+                        ),
+                        new KeyFrame(
+                                Duration.millis(1000),
+                                new KeyValue(gameTimeControl.rateProperty(), 0.001), // for some reason Timeline doesn't like it when rate becomes == 0.0
+                                audioPlayer != null
+                                        ? new KeyValue(audioPlayer.rateProperty(), 0.0)
+                                        : null
+                        )
+                );
+                rateAnim.setOnFinished(event -> {
+                    players.forEach(Player::restoreHealthPoints);
+                    respawnAudioClip.play();
+                    gameLoop.play();
+                    gameTimeControl.setRate(1.0);
+                    gameTimeControl.jumpTo(timeToPlayFrom);
+                    if (audioPlayer != null) {
+                        audioPlayer.setRate(1.0);
+                        audioPlayer.seek(timeToPlayFrom);
+                        audioPlayer.play();
+                    }
+                });
+                rateAnim.play();
+            }
         }
     }
 
@@ -562,6 +575,11 @@ public class GameApplication extends Application {
 
     private void switchScene(Parent node) {
         Platform.runLater(() -> mainScene.setRoot(node));
+    }
+
+    public void startGame(long randomizeSeed) {
+        LevelManager.getInstance().randomizeObjectsWithSeed(randomizeSeed);
+        startGame();
     }
 
     public void startGame() {

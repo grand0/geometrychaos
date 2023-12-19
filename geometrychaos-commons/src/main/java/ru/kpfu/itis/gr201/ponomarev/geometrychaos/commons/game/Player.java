@@ -128,7 +128,7 @@ public class Player {
         return System.nanoTime() - lastDamageTakenTime <= DAMAGE_COOLDOWN_NS;
     }
 
-    public void damage() {
+    public boolean damage() {
         if (!isDamageCooldownActive() && !isUnderDashDefense() && this.healthPoints > 0) {
             this.healthPoints--;
             this.totalHits++;
@@ -137,7 +137,9 @@ public class Player {
             if (this.healthPoints == 0) {
                 this.totalDeaths++;
             }
+            return true;
         }
+        return false;
     }
 
     public boolean canDash() {

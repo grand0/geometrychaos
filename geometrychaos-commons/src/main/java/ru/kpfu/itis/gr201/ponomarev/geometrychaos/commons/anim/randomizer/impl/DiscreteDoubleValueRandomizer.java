@@ -1,6 +1,7 @@
 package ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.anim.randomizer.impl;
 
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.anim.randomizer.DoubleValueRandomizer;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.anim.randomizer.GlobalRandom;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.anim.randomizer.ValueRandomizerType;
 
 public class DiscreteDoubleValueRandomizer extends DoubleValueRandomizer {
@@ -14,7 +15,7 @@ public class DiscreteDoubleValueRandomizer extends DoubleValueRandomizer {
 
     @Override
     public Object randomize() {
-        double val = rng.nextDouble(getStartValue(), getEndValue());
+        double val = GlobalRandom.getInstance().nextDouble(getStartValue(), getEndValue());
         double delta = val - getStartValue();
         int steps = (int) Math.round(delta / getStep());
         return getStartValue() + getStep() * steps;

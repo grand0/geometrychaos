@@ -1,15 +1,8 @@
 package ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.anim.randomizer;
 
-import java.util.Random;
-
 public abstract class DoubleValueRandomizer implements ValueRandomizer {
     private final double startValue;
     private final double endValue;
-    protected final static Random rng;
-
-    static {
-        rng = new Random();
-    }
 
     public DoubleValueRandomizer(double startValue, double endValue) {
         this.startValue = startValue;

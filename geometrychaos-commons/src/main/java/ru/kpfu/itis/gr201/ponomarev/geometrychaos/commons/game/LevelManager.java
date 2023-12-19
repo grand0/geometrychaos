@@ -5,6 +5,8 @@ import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.anim.ObjectKeyFrame;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.anim.randomizer.GlobalRandom;
 
 import java.util.List;
 
@@ -59,6 +61,23 @@ public class LevelManager {
 
     public void removeObject(GameObject obj) {
         getObjects().remove(obj);
+    }
+
+    public void randomizeObjects() {
+        for (GameObject obj : objects) {
+            for (ObjectKeyFrame kf : obj.getKeyFrames()) {
+                kf.randomize();
+            }
+        }
+    }
+
+    public void randomizeObjectsWithSeed(long seed) {
+        GlobalRandom.setSeed(seed);
+        for (GameObject obj : objects) {
+            for (ObjectKeyFrame kf : obj.getKeyFrames()) {
+                kf.randomize();
+            }
+        }
     }
 
     public ObservableList<GameObject> getObjects() {

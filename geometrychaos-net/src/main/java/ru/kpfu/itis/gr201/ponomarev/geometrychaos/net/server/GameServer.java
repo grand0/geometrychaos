@@ -32,6 +32,8 @@ public class GameServer {
     private byte[] changingMapBytes;
     private int changingMapDownloadedBytes;
 
+    private final Random rng = new Random();
+
     public static void main(String[] args) {
         GameServer server = new GameServer();
         server.start();
@@ -203,8 +205,10 @@ public class GameServer {
                             .filter(client -> client.getPlayer() != null)
                             .allMatch(client -> client.getPlayer().isInGame());
                     if (allPlayersReady) {
+                        long seed = rng.nextLong();
+
                         gameStarted = true;
-                        Message startedMessage = new GameStartedMessage();
+                        Message startedMessage = new GameStartedMessage(seed);
                         broadcastMessageSafely(startedMessage);
 
                         LOGGER.log(Level.INFO, "Game started");
