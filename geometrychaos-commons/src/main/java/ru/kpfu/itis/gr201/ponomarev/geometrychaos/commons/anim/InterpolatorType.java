@@ -9,7 +9,15 @@ public enum InterpolatorType {
     INSTANT("Instant", Interpolator.DISCRETE),
     EASE_IN_OUT("Ease in/out", Interpolator.EASE_BOTH),
     EASE_IN("Ease in", Interpolator.EASE_IN),
-    EASE_OUT("Ease out", Interpolator.EASE_OUT);
+    EASE_OUT("Ease out", Interpolator.EASE_OUT),
+    ACCELERATE("Accelerate", CustomInterpolates.ACCELERATE),
+    DECELERATE("Decelerate", CustomInterpolates.DECELERATE),
+    ACCELERATE_DECELERATE("Acc Dec", CustomInterpolates.ACCELERATE_DECELERATE),
+    ANTICIPATE("Anticipate", CustomInterpolates.ANTICIPATE),
+    OVERSHOOT("Overshoot", CustomInterpolates.OVERSHOOT),
+    ANTICIPATE_OVERSHOOT("Anti Over", CustomInterpolates.ANTICIPATE_OVERSHOOT),
+    BOUNCE("Bounce", CustomInterpolates.BOUNCE),
+    ;
 
     private final String name;
     private final Interpolator interpolator;
