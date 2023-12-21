@@ -541,8 +541,6 @@ public class GameApplication extends Application {
                                     GameClient.getInstance().thisPlayerReady();
                                     playerReady(thisPlayer.getPlayerId());
                                 } else {
-                                    players.clear();
-                                    thisPlayer = null;
                                     switchScene(levelSelector);
                                 }
                             });

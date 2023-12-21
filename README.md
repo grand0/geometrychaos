@@ -2,7 +2,7 @@
 
 > Check out [Releases](https://github.com/grand0/geometrychaos/releases) page for installers and portable versions of the game.
 
-Bullet-hell rhythm-based game, idea is shamelessly copied from projects like [Just Shapes & Beats](https://store.steampowered.com/app/531510/Just_Shapes__Beats/) and [Project Arrhytmia](https://store.steampowered.com/app/440310/Project_Arrhythmia/). Features multiplayer and level editor. Still under heavy construction.
+Bullet-hell rhythm-based game, idea is shamelessly copied from projects like [Just Shapes & Beats](https://store.steampowered.com/app/531510/Just_Shapes__Beats/) and [Project Arrhythmia](https://store.steampowered.com/app/440310/Project_Arrhythmia/). Features multiplayer and level editor. Still under heavy construction.
 
 Made with pure JavaFX.
 
@@ -18,7 +18,7 @@ In multiplayer when one client chooses a map it automatically downloads on all o
 ./mvnw -pl geometrychaos-editorapp,geometrychaos-gameapp javafx:jlink
 ```
 Executing scripts for game and editor would be available at `geometrychaos-gameapp/target/gc-game/bin/gc-game` and `geometrychaos-editorapp/target/gc-editor/bin/gc-editor` respectively.  
-Executable JAR for game server would be available at `geometrychaos-net/target/geometrychaos-net-1.0-SNAPSHOT-jar-with-dependencies.jar`
+Executable JAR for game server would be available at `geometrychaos-net/target/geometrychaos-net-<version>-jar-with-dependencies.jar`
 
 ## Sample video
 

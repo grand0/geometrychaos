@@ -6,7 +6,7 @@
 
     <groupId>ru.kpfu.itis.gr201.ponomarev</groupId>
     <artifactId>geometrychaos</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.1</version>
     <packaging>pom</packaging>
     <name>Geometry Chaos</name>
     <modules>
