@@ -6,7 +6,7 @@
     <parent>
         <groupId>ru.kpfu.itis.gr201.ponomarev</groupId>
         <artifactId>geometrychaos</artifactId>
-        <version>1.1</version>
+        <version>1.1.1</version>
     </parent>
 
     <artifactId>geometrychaos-commons</artifactId>

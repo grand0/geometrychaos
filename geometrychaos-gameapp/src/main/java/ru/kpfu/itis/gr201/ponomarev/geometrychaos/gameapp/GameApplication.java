@@ -21,7 +21,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -98,6 +98,10 @@ public class GameApplication extends Application {
         URL introAudio = getClass().getResource("/audio/wavelight.mp3");
         if (introAudio != null) {
             this.audioPlayer = new MediaPlayer(new Media(introAudio.toExternalForm()));
+            audioPlayer.setOnEndOfMedia(() -> {
+                audioPlayer.seek(new Duration(0));
+                audioPlayer.play();
+            });
             GlobalAudioSpectrumProvider.registerForMediaPlayer(audioPlayer);
             this.audioPlayer.play();
         }
@@ -279,6 +283,7 @@ public class GameApplication extends Application {
         primaryStage.setScene(mainScene);
         primaryStage.setFullScreen(true);
         primaryStage.setFullScreenExitHint("");
+        primaryStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
         switchScene(mainMenuScreen);
         primaryStage.show();
     }
@@ -478,6 +483,10 @@ public class GameApplication extends Application {
         if (data.getAudio() != null) {
             audioPlayer = new MediaPlayer(new Media(data.getAudio().toURI().toString()));
             GlobalAudioSpectrumProvider.registerForMediaPlayer(audioPlayer);
+            audioPlayer.setOnEndOfMedia(() -> {
+                audioPlayer.seek(new Duration(0));
+                audioPlayer.play();
+            });
         } else {
             audioPlayer = null;
             GlobalAudioSpectrumProvider.registerForMediaPlayer(null);
@@ -494,6 +503,10 @@ public class GameApplication extends Application {
         if (data.getAudio() != null) {
             audioPlayer = new MediaPlayer(new Media(data.getAudio().toURI().toString()));
             GlobalAudioSpectrumProvider.registerForMediaPlayer(audioPlayer);
+            audioPlayer.setOnEndOfMedia(() -> {
+                audioPlayer.seek(new Duration(0));
+                audioPlayer.play();
+            });
         } else {
             audioPlayer = null;
             GlobalAudioSpectrumProvider.registerForMediaPlayer(null);
