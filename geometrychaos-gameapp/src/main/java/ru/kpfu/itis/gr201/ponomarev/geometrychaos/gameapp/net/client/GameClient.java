@@ -17,7 +17,7 @@ import java.util.Arrays;
 
 public class GameClient {
 
-    private static final long PLAYER_UPDATE_INTERVAL_NS = 1_000_000_000 / 60;
+    private static final long PLAYER_UPDATE_INTERVAL_NS = 1_000_000_000 / 10;
 
     private static GameClient instance;
     private GameApplication app;

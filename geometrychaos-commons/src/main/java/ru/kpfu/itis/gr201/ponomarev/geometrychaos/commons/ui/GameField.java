@@ -31,6 +31,7 @@ public class GameField extends Pane {
     public static final double FIELD_ASPECT_RATIO = FIELD_WIDTH / FIELD_HEIGHT;
 
     private boolean listenToObjectsChanges = true;
+    private boolean disposed = false;
 
     private final List<Player> players;
     private Consumer<List<Shape>> newFrameCallback;
@@ -71,6 +72,7 @@ public class GameField extends Pane {
             return "selectedObject";
         }
     };
+    private final Runnable removeAllBindingsAndListeners;
 
     public GameField(IntegerProperty timelineCursorPosition, ObjectProperty<GameObject> selectedObject) {
         players = new ArrayList<>();
@@ -78,18 +80,30 @@ public class GameField extends Pane {
         if (selectedObject != null) {
             this.selectedObject.bind(selectedObject);
         }
-        LevelManager.getInstance().objectsProperty().addListener((InvalidationListener) obs -> {
+        InvalidationListener invalidationConditionalListener = obs -> {
             if (listenToObjectsChanges) {
                 redraw();
             }
-        });
-        widthProperty().addListener(obs -> redraw());
-        heightProperty().addListener(obs -> redraw());
+        };
+        InvalidationListener invalidationListener = obs -> redraw();
+        LevelManager.getInstance().objectsProperty().addListener(invalidationConditionalListener);
+        widthProperty().addListener(invalidationListener);
+        heightProperty().addListener(invalidationListener);
+
+        removeAllBindingsAndListeners = () -> {
+            this.time.unbind();
+            this.selectedObject.unbind();
+            LevelManager.getInstance().objectsProperty().removeListener(invalidationConditionalListener);
+            widthProperty().removeListener(invalidationListener);
+            heightProperty().removeListener(invalidationListener);
+        };
 
         setBackground(Background.fill(Theme.GAME_FIELD_BACKGROUND));
     }
 
     public void redraw() {
+        if (disposed) return;
+
         getChildren().clear();
 
         Point2D centerOfScreen = new Point2D(getWidth() / 2.0, getHeight() / 2.0);
@@ -152,6 +166,13 @@ public class GameField extends Pane {
 
     public double getScalingFactor() {
         return getWidth() / GameField.FIELD_WIDTH;
+    }
+
+    public void dispose() {
+        removeAllBindingsAndListeners.run();
+        players.clear();
+        newFrameCallback = null;
+        disposed = true;
     }
 
     public int getTime() {

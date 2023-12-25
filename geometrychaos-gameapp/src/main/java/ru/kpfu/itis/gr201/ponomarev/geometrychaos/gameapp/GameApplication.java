@@ -527,6 +527,9 @@ public class GameApplication extends Application {
                 return "time";
             }
         };
+        if (gameField != null) {
+            gameField.dispose();
+        }
         gameField = new GameField(time, null);
         gameField.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         gameField.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
