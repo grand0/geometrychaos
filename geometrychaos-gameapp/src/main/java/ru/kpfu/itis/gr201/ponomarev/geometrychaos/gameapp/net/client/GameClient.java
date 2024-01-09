@@ -12,11 +12,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Arrays;
 
 public class GameClient {
 
+    private static final int CONNECTION_TIMEOUT = 5000;
     private static final long PLAYER_UPDATE_INTERVAL_NS = 1_000_000_000 / 10;
 
     private static GameClient instance;
@@ -49,7 +51,8 @@ public class GameClient {
         }
 
         int port = ServerConfig.PORT;
-        socket = new Socket(host, port);
+        socket = new Socket();
+        socket.connect(new InetSocketAddress(host, port), CONNECTION_TIMEOUT);
         InputStream in = socket.getInputStream();
         OutputStream out = socket.getOutputStream();
         serverCommunicator = new ServerCommunicator(in, out, this);
