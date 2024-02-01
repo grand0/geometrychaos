@@ -215,7 +215,7 @@ public class KeyFramesTimeline extends Pane {
                 .toList();
     }
 
-    private void redraw() {
+    public void redraw() {
         redraw(false);
     }
 

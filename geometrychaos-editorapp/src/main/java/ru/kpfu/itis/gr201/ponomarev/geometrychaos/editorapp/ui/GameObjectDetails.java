@@ -4,6 +4,7 @@ import javafx.beans.InvalidationListener;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
 import javafx.collections.FXCollections;
+import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
@@ -11,16 +12,22 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.GameObject;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.Shape;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.GameShapeType;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.setting.ShapeDropdownSetting;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.setting.ShapeSetting;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.setting.ShapeStringSetting;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui.Theme;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editorapp.util.converter.ShapeStringConverter;
+
+import java.util.HashMap;
+import java.util.List;
 
 public class GameObjectDetails extends Pane {
 
     private final TextField nameField;
     private final Spinner<Integer> startTimeSpinner;
     private final Spinner<Integer> durationSpinner;
-    private final ComboBox<Shape> shapeComboBox;
+    private final ComboBox<GameShapeType> shapeComboBox;
     private final Spinner<Integer> viewOrderSpinner;
     private final GridPane gridPane;
 
@@ -68,13 +75,14 @@ public class GameObjectDetails extends Pane {
         });
 
         shapeComboBox = new ComboBox<>();
-        shapeComboBox.setItems(FXCollections.observableArrayList(Shape.values()));
+        shapeComboBox.setItems(FXCollections.observableArrayList(GameShapeType.values()));
         shapeComboBox.setConverter(new ShapeStringConverter());
         shapeComboBox.valueProperty().addListener(obs -> {
             GameObject obj = displayingObject.get();
-            Shape val = shapeComboBox.getValue();
-            if (obj != null && !obj.getShape().equals(val)) {
-                obj.setShape(val);
+            GameShapeType val = shapeComboBox.getValue();
+            if (obj != null && !obj.getShape().getType().equals(val)) {
+                obj.setShapeType(val);
+                redraw();
             }
         });
 
@@ -92,12 +100,6 @@ public class GameObjectDetails extends Pane {
         gridPane.setVgap(10);
         gridPane.setHgap(10);
         gridPane.setVisible(false);
-        gridPane.addRow(0, makeLabel("Name"), nameField);
-        gridPane.addRow(1, makeLabel("Start time"), startTimeSpinner);
-        gridPane.addRow(2, makeLabel("Duration"), durationSpinner);
-        gridPane.addRow(3, makeLabel("Shape"), shapeComboBox);
-        gridPane.addRow(4, makeLabel("View order"), viewOrderSpinner);
-
         getChildren().add(gridPane);
 
         displayingObject.bind(objectToDisplay);
@@ -113,7 +115,7 @@ public class GameObjectDetails extends Pane {
         });
     }
 
-    private void redraw() {
+    public void redraw() {
         GameObject obj = displayingObject.get();
 
         if (obj == null) {
@@ -122,17 +124,52 @@ public class GameObjectDetails extends Pane {
         }
 
         gridPane.setVisible(true);
+        gridPane.getChildren().clear();
+        gridPane.addRow(0, LabelFactory.makeLabel("Name"), nameField);
+        gridPane.addRow(1, LabelFactory.makeLabel("Start time"), startTimeSpinner);
+        gridPane.addRow(2, LabelFactory.makeLabel("Duration"), durationSpinner);
+        gridPane.addRow(3, LabelFactory.makeLabel("View order"), viewOrderSpinner);
+        gridPane.addRow(4, LabelFactory.makeLabel("Shape"), shapeComboBox);
 
         nameField.setText(obj.getName());
         startTimeSpinner.getEditor().setText(String.valueOf(obj.getStartTime()));
         durationSpinner.getEditor().setText(String.valueOf(obj.getDuration()));
-        shapeComboBox.setValue(obj.getShape());
         viewOrderSpinner.getEditor().setText(String.valueOf(obj.getViewOrder()));
+        shapeComboBox.setValue(obj.getShape().getType());
+
+        for (ShapeSetting setting : obj.getShape().getSettings()) {
+            Label settingLabel = LabelFactory.makeLabel(setting.getName());
+            Node settingNode = makeSettingNode(setting);
+            gridPane.addRow(gridPane.getRowCount(), settingLabel, settingNode);
+        }
     }
 
-    private Label makeLabel(String text) {
-        Label label = new Label(text);
-        label.setTextFill(Theme.ON_BACKGROUND);
-        return label;
+    private Node makeSettingNode(ShapeSetting setting) {
+        if (setting instanceof ShapeStringSetting s) {
+            TextField field = new TextField(s.getValue());
+            field.textProperty().addListener(obs -> s.setValue(field.getText()));
+            return field;
+        } else if (setting instanceof ShapeDropdownSetting<?> s) {
+            ComboBox<String> comboBox = new ComboBox<>();
+            comboBox.setItems(FXCollections.observableList(List.of(s.getEnumNames())));
+            comboBox.setValue(s.getValue().toString());
+            comboBox.valueProperty().addListener(obs -> s.setValue(comboBox.getValue()));
+            return comboBox;
+        }
+        throw new IllegalArgumentException("Unknown setting");
+    }
+
+    private static class LabelFactory {
+        private static final HashMap<String, Label> cache = new HashMap<>();
+
+        public static Label makeLabel(String text) {
+            Label label = cache.get(text);
+            if (label == null) {
+                label = new Label(text);
+                label.setTextFill(Theme.ON_BACKGROUND);
+                cache.put(text, label);
+            }
+            return label;
+        }
     }
 }

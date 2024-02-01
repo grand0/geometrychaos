@@ -6,6 +6,7 @@ import javafx.scene.shape.*;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.GameObject;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.GameShapeType;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui.Theme;
 
 public class GameObjectShapeMaker {
@@ -18,7 +19,7 @@ public class GameObjectShapeMaker {
             return null;
         }
 
-        double shapeSize = ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.Shape.DEFAULT_SHAPE_SIZE;
+        double shapeSize = GameShapeType.DEFAULT_SHAPE_SIZE;
 
         ShapeMaker shapeMaker = new ShapeMaker(
                 obj.getPositionX(),

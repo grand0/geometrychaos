@@ -13,12 +13,15 @@ import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.anim.randomizer.ValueR
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.anim.randomizer.impl.DiscreteDoubleValueRandomizer;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.anim.randomizer.impl.LinearDoubleValueRandomizer;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.GameObject;
-import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.Shape;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.GameShape;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.GameShapeType;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.setting.ShapeSetting;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.io.exception.LevelReadException;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.io.exception.LevelWriteException;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -61,12 +64,23 @@ public class LevelIO {
                 }
                 jsonKeyFrames.put(jsonKeyFrame);
             }
+            Object shape;
+            if (o.getShape().getSettings().length == 0) {
+                shape = o.getShape().getType().name();
+            } else {
+                Map<String, Object> shapeMap = new HashMap<>();
+                shapeMap.put("name", o.getShape().getType().name());
+                for (ShapeSetting setting : o.getShape().getSettings()) {
+                    shapeMap.put(setting.getName(), setting.getValue());
+                }
+                shape = shapeMap;
+            }
             Map<String, Object> objMap = Map.ofEntries(
                     entry("name", o.getName()),
                     entry("startTime", o.getStartTime()),
                     entry("duration", o.getDuration()),
                     entry("timelineLayer", o.getTimelineLayer()),
-                    entry("shape", o.getShape().name()),
+                    entry("shape", shape),
                     entry("viewOrder", o.getViewOrder()),
                     entry("keyFrames", jsonKeyFrames)
             );
@@ -94,7 +108,21 @@ public class LevelIO {
                     int startTime = jsonObj.getInt("startTime");
                     int duration = jsonObj.getInt("duration");
                     int timelineLayer = jsonObj.getInt("timelineLayer");
-                    Shape shape = Shape.valueOf(jsonObj.getString("shape"));
+                    GameShape shape = null;
+                    Object jsonShape = jsonObj.get("shape");
+                    if (jsonShape instanceof String s) {
+                        shape = new GameShape(GameShapeType.valueOf(jsonObj.getString("shape")));
+                    } else if (jsonShape instanceof JSONObject m) {
+                        shape = new GameShape(GameShapeType.valueOf((String) m.get("name")));
+                        for (ShapeSetting setting : shape.getSettings()) {
+                            Object val = m.get(setting.getName());
+                            if (val != null) {
+                                setting.setValue(val);
+                            }
+                        }
+                    } else {
+                        throw new LevelReadException("Unknown type of \"shape\" property.");
+                    }
                     int viewOrder = jsonObj.getInt("viewOrder");
                     JSONArray jsonKeyFrames = jsonObj.getJSONArray("keyFrames");
 

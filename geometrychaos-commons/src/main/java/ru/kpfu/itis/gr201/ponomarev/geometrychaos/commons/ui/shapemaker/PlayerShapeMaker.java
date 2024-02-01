@@ -4,10 +4,12 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.GameShape;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.Player;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.GameShapeType;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui.Theme;
 
-import static ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.Shape.*;
+import static ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.GameShapeType.*;
 
 public class PlayerShapeMaker {
 
@@ -52,16 +54,16 @@ public class PlayerShapeMaker {
     }
 
     private static Shape makeShape(Player player, double scalingFactor) {
-        ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.Shape shapeType = null;
+        GameShapeType gameShapeType = SQUARE;
         double rotateDegrees = 0;
         switch (player.getPlayerId() % 4) {
-            case 0 -> shapeType = SQUARE;
-            case 1 -> shapeType = CIRCLE;
+            case 0 -> gameShapeType = SQUARE;
+            case 1 -> gameShapeType = CIRCLE;
             case 2 -> {
-                shapeType = TRIANGLE;
+                gameShapeType = TRIANGLE;
                 rotateDegrees = 90.0;
             }
-            case 3 -> shapeType = HEXAGON;
+            case 3 -> gameShapeType = HEXAGON;
         }
 
         ShapeMaker shapeMaker = new ShapeMaker(
@@ -69,7 +71,7 @@ public class PlayerShapeMaker {
                 player.getPositionY(),
                 Player.PLAYER_SIZE,
                 scalingFactor,
-                shapeType
+                new GameShape(gameShapeType)
         );
         Shape shape = shapeMaker.make();
         if (rotateDegrees != 0) {

@@ -8,6 +8,8 @@ import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.anim.KeyFrameTag;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.anim.KeyFramesInterpolationDriver;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.anim.ObjectKeyFrame;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.anim.randomizer.ValueRandomizer;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.GameShape;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.GameShapeType;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -21,7 +23,7 @@ public class GameObject extends ObjectPropertyBase<GameObject> {
     private final IntegerProperty duration;
     private final IntegerProperty timelineLayer;
     private final KeyFramesInterpolationDriver interpolationDriver;
-    private final ObjectProperty<Shape> shape;
+    private final ObjectProperty<GameShape> shape;
     private final IntegerProperty viewOrder;
 
     private final IntegerProperty time;
@@ -133,7 +135,7 @@ public class GameObject extends ObjectPropertyBase<GameObject> {
                 return "shape";
             }
         };
-        this.shape.set(Shape.SQUARE);
+        this.shape.set(new GameShape(GameShapeType.SQUARE));
 
         this.viewOrder = new IntegerPropertyBase() {
             @Override
@@ -390,16 +392,20 @@ public class GameObject extends ObjectPropertyBase<GameObject> {
         return interpolationDriver;
     }
 
-    public Shape getShape() {
+    public GameShape getShape() {
         return shape.get();
     }
 
-    public ObjectProperty<Shape> shapeProperty() {
+    public ObjectProperty<GameShape> shapeProperty() {
         return shape;
     }
 
-    public void setShape(Shape shape) {
-        this.shape.set(shape);
+    public void setShape(GameShape gameShape) {
+        this.shape.set(gameShape);
+    }
+    
+    public void setShapeType(GameShapeType type) {
+        setShape(new GameShape(type));
     }
 
     public int getViewOrder() {

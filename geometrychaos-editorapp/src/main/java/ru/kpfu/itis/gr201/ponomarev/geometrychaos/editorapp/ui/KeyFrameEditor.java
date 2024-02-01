@@ -151,7 +151,7 @@ public class KeyFrameEditor extends Pane {
         redraw();
     }
 
-    private void redraw() {
+    public void redraw() {
         if (keyFrame.get() == null) {
             setVisible(false);
             return;

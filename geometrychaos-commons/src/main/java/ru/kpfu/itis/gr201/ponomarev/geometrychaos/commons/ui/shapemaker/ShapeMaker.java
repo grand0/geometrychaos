@@ -1,10 +1,15 @@
 package ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui.shapemaker;
 
 import javafx.geometry.Point2D;
+import javafx.geometry.VPos;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.GameShape;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.util.TextOrigin;
 
 public class ShapeMaker {
 
@@ -15,19 +20,19 @@ public class ShapeMaker {
     private final double centerY;
     private final double size;
     private final double scalingFactor;
-    private final ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.Shape shape;
+    private final GameShape gameShape;
     private final Point2D origin;
 
-    public ShapeMaker(double centerX, double centerY, double size, double scalingFactor, ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.Shape shape) {
-        this(centerX, centerY, size, scalingFactor, shape, null);
+    public ShapeMaker(double centerX, double centerY, double size, double scalingFactor, GameShape gameShape) {
+        this(centerX, centerY, size, scalingFactor, gameShape, null);
     }
 
-    public ShapeMaker(double centerX, double centerY, double size, double scalingFactor, ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.Shape shape, Point2D origin) {
+    public ShapeMaker(double centerX, double centerY, double size, double scalingFactor, GameShape gameShape, Point2D origin) {
         this.centerX = centerX;
         this.centerY = centerY;
         this.size = size;
         this.scalingFactor = scalingFactor;
-        this.shape = shape;
+        this.gameShape = gameShape;
         if (origin == null) {
             this.origin = new Point2D(0, 0);
         } else {
@@ -37,11 +42,12 @@ public class ShapeMaker {
 
     public Shape make() {
         Shape result = null;
-        switch (shape) {
+        switch (gameShape.getType()) {
             case SQUARE -> result = makeSquare();
             case CIRCLE -> result = makeCircle();
             case TRIANGLE -> result = makeTriangle();
             case HEXAGON -> result = makeHexagon();
+            case TEXT -> result = makeText();
         }
         if (result == null) {
             throw new RuntimeException("Unknown shape type");
@@ -86,5 +92,26 @@ public class ShapeMaker {
                 (centerX - sideLength / 2) * scalingFactor + origin.getX(), (centerY + halfHeight) * scalingFactor + origin.getY(),
                 (centerX - size       / 2) * scalingFactor + origin.getX(), (centerY             ) * scalingFactor + origin.getY()
         );
+    }
+
+    private Shape makeText() {
+        String textStr = (String) gameShape.getSettings()[0].getValue();
+        TextOrigin textOrigin = (TextOrigin) gameShape.getSettings()[1].getValue();
+        Text text = new Text(textStr);
+        text.setFont(Font.font("Monospaced", 32 * scalingFactor));
+        switch (textOrigin) {
+            case TOP_LEFT, TOP_CENTER, TOP_RIGHT -> text.setTextOrigin(VPos.TOP);
+            case LEFT, CENTER, RIGHT -> text.setTextOrigin(VPos.CENTER);
+            case BOTTOM_CENTER, BOTTOM_LEFT, BOTTOM_RIGHT -> text.setTextOrigin(VPos.BOTTOM);
+        }
+        Shape textShape = Shape.union(new Rectangle(0, 0), text);
+        double posX = centerX * scalingFactor + origin.getX();
+        switch (textOrigin) {
+            case TOP_CENTER, CENTER, BOTTOM_CENTER -> posX -= textShape.prefWidth(-1) / 2.0;
+            case TOP_RIGHT, RIGHT, BOTTOM_RIGHT -> posX -= textShape.prefWidth(-1);
+        }
+        text.setX(posX);
+        text.setY(centerY * scalingFactor + origin.getY());
+        return text;
     }
 }

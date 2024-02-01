@@ -10,6 +10,7 @@ import javafx.beans.property.ObjectPropertyBase;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
@@ -30,6 +31,7 @@ import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editorapp.ui.*;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editorapp.ui.dialog.OpenAudioDialog;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -220,6 +222,15 @@ public class EditorApplication extends Application {
         root.setBackground(Background.fill(Theme.BACKGROUND));
 
         Scene scene = new Scene(root, WINDOW_WIDTH, WINDOW_HEIGHT);
+        scene.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.F5) {
+                objectsTimeline.redraw();
+                gameField.redraw();
+                gameObjectDetails.redraw();
+                Arrays.stream(kfTimelines).forEach(KeyFramesTimeline::redraw);
+                keyFrameEditor.redraw();
+            }
+        });
         primaryStage.setScene(scene);
         primaryStage.setMaximized(true);
         primaryStage.show();

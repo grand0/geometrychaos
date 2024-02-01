@@ -12,4 +12,6 @@ module ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons {
     exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.io.map;
     exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui;
     exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui.shapemaker;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape;
+    exports ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.setting;
 }
