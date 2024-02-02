@@ -37,6 +37,8 @@ public class ObjectsTimeline extends Pane {
     private final Canvas canvas;
     private final Canvas waveformCanvas;
 
+    private boolean hideObjects = false;
+
     private final IntegerProperty visualLayersOffset = new IntegerPropertyBase() {
         @Override
         protected void invalidated() {
@@ -402,6 +404,15 @@ public class ObjectsTimeline extends Pane {
                         obj.setDuration(getCursorPosition() - obj.getStartTime());
                     }
                 }
+            } else if (event.getCode() == KeyCode.H) {
+                hideObjects = true;
+                redraw();
+            }
+        });
+        setOnKeyReleased(event -> {
+            if (event.getCode() == KeyCode.H) {
+                hideObjects = false;
+                redraw();
             }
         });
 
@@ -468,16 +479,23 @@ public class ObjectsTimeline extends Pane {
                 int end = obj.getEndTime();
                 if (end >= visualMillisOffset.get() && start <= visualMillisOffset.get() + millisPerWidth) {
                     Color fillColor;
+                    Color strokeColor;
                     if (obj.equals(getSelectedObject())) {
                         fillColor = Theme.ACCENT;
-                        g.setStroke(Theme.ACCENT.darker());
+                        strokeColor = Theme.ACCENT.darker();
                         g.setLineWidth(2.0);
                     } else {
-                        fillColor = Theme.PRIMARY;
-                        g.setStroke(Theme.PRIMARY.darker());
+                        if (hideObjects) {
+                            fillColor = Color.TRANSPARENT;
+                            strokeColor = Theme.PRIMARY.darker().deriveColor(0, 1, 1, 0.1);
+                        } else {
+                            fillColor = Theme.PRIMARY;
+                            strokeColor = Theme.PRIMARY.darker();
+                        }
                         g.setLineWidth(1.0);
                     }
                     g.setFill(fillColor);
+                    g.setStroke(strokeColor);
                     g.fillRoundRect(
                             msToPx(start - visualMillisOffset.get()),
                             TIMELINE_TIME_AXIS_HEIGHT + i * TIMELINE_LAYER_HEIGHT + 1,
@@ -495,13 +513,15 @@ public class ObjectsTimeline extends Pane {
                             5
                     );
 
-                    g.setFill(Theme.BACKGROUND);
-                    g.fillText(
-                            obj.getName(),
-                            msToPx(start - visualMillisOffset.get()),
-                            TIMELINE_TIME_AXIS_HEIGHT + i * TIMELINE_LAYER_HEIGHT + TIMELINE_LAYER_HEIGHT * 0.5,
-                            msToPx(end - start)
-                    );
+                    if (!hideObjects || obj.equals(getSelectedObject())) {
+                        g.setFill(Theme.BACKGROUND);
+                        g.fillText(
+                                obj.getName(),
+                                msToPx(start - visualMillisOffset.get()),
+                                TIMELINE_TIME_AXIS_HEIGHT + i * TIMELINE_LAYER_HEIGHT + TIMELINE_LAYER_HEIGHT * 0.5,
+                                msToPx(end - start)
+                        );
+                    }
                 }
             }
         }
