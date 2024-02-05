@@ -10,8 +10,6 @@ import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.anim.randomizer.Global
 
 import java.util.List;
 
-import static ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.GameObject.LAYERS_COUNT;
-
 public class LevelManager {
 
     private static LevelManager instance;
@@ -34,7 +32,7 @@ public class LevelManager {
         String name = "Object " + (int) (Math.random() * 1000 + 1);
         GameObject gameObject = new GameObject(name, start, duration, 0);
         gameObject.initStartKeyFrames();
-        for (int i = 0; i < LAYERS_COUNT; i++) {
+        for (int i = 0; ; i++) {
             int curLayer = i;
             List<GameObject> objs = LevelManager.getInstance()
                     .getObjects()

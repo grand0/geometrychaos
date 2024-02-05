@@ -17,8 +17,6 @@ import java.util.Optional;
 
 public class GameObject extends ObjectPropertyBase<GameObject> {
 
-    public final static int LAYERS_COUNT = 30;
-
     private final StringProperty name;
     private final IntegerProperty startTime;
     private final IntegerProperty duration;
@@ -405,7 +403,6 @@ public class GameObject extends ObjectPropertyBase<GameObject> {
 
     public void setTimelineLayer(int timelineLayer) {
         if (timelineLayer < 0) timelineLayer = 0;
-        else if (timelineLayer >= LAYERS_COUNT) timelineLayer = LAYERS_COUNT - 1;
         this.timelineLayer.set(timelineLayer);
     }
 

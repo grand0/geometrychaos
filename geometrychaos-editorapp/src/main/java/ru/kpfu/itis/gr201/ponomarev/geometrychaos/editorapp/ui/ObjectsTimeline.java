@@ -7,6 +7,7 @@ import javafx.scene.Cursor;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
@@ -25,7 +26,6 @@ import java.util.Optional;
 
 public class ObjectsTimeline extends Pane {
 
-    public final static int LAYERS_COUNT = 30;
     public final static int VISIBLE_LAYERS_COUNT = 10;
 
     private final static double TIMELINE_TIME_AXIS_HEIGHT = 30;
@@ -152,6 +152,24 @@ public class ObjectsTimeline extends Pane {
         }
     };
 
+    private final IntegerProperty hoveredLayerNumber = new IntegerPropertyBase() {
+        @Override
+        protected void invalidated() {
+            super.invalidated();
+            redraw();
+        }
+
+        @Override
+        public Object getBean() {
+            return null;
+        }
+
+        @Override
+        public String getName() {
+            return "hoveredLayerNumber";
+        }
+    };
+
     public ObjectsTimeline() {
         this.canvas = new Canvas();
         this.canvas.widthProperty().bind(widthProperty());
@@ -184,7 +202,7 @@ public class ObjectsTimeline extends Pane {
                 changingCursorPos = true;
                 setCursorPosition(pxToMs(event.getX()) + visualMillisOffset.get());
             } else {
-                int layer = (int) ((event.getY() - TIMELINE_TIME_AXIS_HEIGHT) / TIMELINE_LAYER_HEIGHT) + visualLayersOffset.get();
+                int layer = getLayerAtY(event.getY());
                 int time = pxToMs(event.getX()) + visualMillisOffset.get();
                 boolean prepareDrag = false;
                 boolean prepareScale = false;
@@ -274,7 +292,7 @@ public class ObjectsTimeline extends Pane {
 
                     selectedObject.get().setStartTime(newStartTime);
 
-                    int layer = (int) ((event.getY() - TIMELINE_TIME_AXIS_HEIGHT) / TIMELINE_LAYER_HEIGHT) + visualLayersOffset.get();
+                    int layer = getLayerAtY(event.getY());
                     if (selectedObject.get().getTimelineLayer() != layer) {
                         selectedObject.get().setTimelineLayer(layer);
                     }
@@ -307,6 +325,7 @@ public class ObjectsTimeline extends Pane {
                     selectedObject.get().setDuration(newDuration);
                 }
             }
+            updateHoveredLayer(event.getY());
         });
         setOnMouseReleased(event -> {
             changingCursorPos = false;
@@ -314,13 +333,16 @@ public class ObjectsTimeline extends Pane {
             selectedObjectStartTimeBeforeDrag = null;
             setCursor(Cursor.DEFAULT);
         });
+        setOnMouseMoved(event -> updateHoveredLayer(event.getY()));
+        setOnMouseExited(event -> hoveredLayerNumber.set(-1));
         setOnScroll(event -> {
             if (event.isControlDown()) {
                 zoom.set(Math.max(0.1, Math.min(10, zoom.getValue() - event.getDeltaY() / event.getMultiplierY() * 0.1)));
             } else {
                 int layersDelta = (int) (event.getDeltaY() / event.getMultiplierY());
-                visualLayersOffset.set(Math.max(0, Math.min(LAYERS_COUNT - VISIBLE_LAYERS_COUNT, visualLayersOffset.get() - layersDelta)));
+                visualLayersOffset.set(Math.max(0, visualLayersOffset.get() - layersDelta));
                 visualMillisOffset.set(Math.max(0, visualMillisOffset.get() - pxToMs(event.getDeltaX())));
+                updateHoveredLayer(event.getY());
             }
         });
         setOnKeyPressed(event -> {
@@ -348,7 +370,7 @@ public class ObjectsTimeline extends Pane {
                     opt.ifPresent(intent -> {
                         for (int i = 0; i < intent.arraysCount(); i++) {
                             for (int j = (i == 0 ? 1 : 0); j < intent.count(); j++) {
-                                int timelineLayer = (getSelectedObject().getTimelineLayer() + i) % LAYERS_COUNT;
+                                int timelineLayer = getSelectedObject().getTimelineLayer() + i;
                                 GameObject copy = new GameObject(
                                         getSelectedObject().getName(),
                                         getSelectedObject().getStartTime() + j * intent.interval(),
@@ -381,7 +403,7 @@ public class ObjectsTimeline extends Pane {
                             getSelectedObject().getName(),
                             getSelectedObject().getStartTime(),
                             getSelectedObject().getDuration(),
-                            getSelectedObject().getTimelineLayer() == LAYERS_COUNT - 1 ? 0 : getSelectedObject().getTimelineLayer() + 1
+                            getSelectedObject().getTimelineLayer() + 1
                     );
                     for (ObjectKeyFrame kf : getSelectedObject().getKeyFrames()) {
                         copy.addKeyFrame(
@@ -429,6 +451,22 @@ public class ObjectsTimeline extends Pane {
             }
             redraw();
         });
+    }
+
+    private void updateHoveredLayer(double y) {
+        if (y > TIMELINE_TIME_AXIS_HEIGHT) {
+            hoveredLayerNumber.set(getLayerAtY(y));
+        } else {
+            hoveredLayerNumber.set(-1);
+        }
+    }
+
+    private int getLayerAtY(double y) {
+        return (int) ((y - TIMELINE_TIME_AXIS_HEIGHT) / TIMELINE_LAYER_HEIGHT) + visualLayersOffset.get();
+    }
+
+    private double getYOfLayer(int layer) {
+        return (layer - visualLayersOffset.get()) * TIMELINE_LAYER_HEIGHT + TIMELINE_TIME_AXIS_HEIGHT;
     }
 
     public void redraw() {
@@ -546,6 +584,11 @@ public class ObjectsTimeline extends Pane {
                 cursorPositionOnScreen,
                 getHeight()
         );
+
+        if (hoveredLayerNumber.get() >= 0) {
+            g.setFill(Theme.ON_BACKGROUND);
+            g.fillText(String.valueOf(hoveredLayerNumber.get()), 10, getYOfLayer(hoveredLayerNumber.get()) + TIMELINE_LAYER_HEIGHT * 0.5);
+        }
     }
 
     private void drawWaveform() {
