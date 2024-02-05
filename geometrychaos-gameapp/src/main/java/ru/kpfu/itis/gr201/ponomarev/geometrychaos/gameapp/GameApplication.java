@@ -671,7 +671,7 @@ public class GameApplication extends Application {
         GameClient.getInstance().thisPlayerUpdate(thisPlayer.getPositionX(), thisPlayer.getPositionY(), thisPlayer.getVelocityX(), thisPlayer.getVelocityY(), thisPlayer.getHealthPoints());
     }
 
-    private void newFrameCallback(List<Shape> objectsShapes) {
+    private void newFrameCallback(Map<GameObject, Shape> objectsShapes) {
         boolean hit = CollisionsDriver.checkPlayerObjectCollisions(thisPlayer, objectsShapes, gameField.getScalingFactor());
         if (hit) {
             GameClient.getInstance().thisPlayerHit(thisPlayer.getHealthPoints());

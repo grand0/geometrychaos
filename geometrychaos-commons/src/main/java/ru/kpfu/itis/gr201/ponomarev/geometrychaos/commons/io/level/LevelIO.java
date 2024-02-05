@@ -18,6 +18,7 @@ import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.GameShapeTy
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.setting.ShapeSetting;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.io.exception.LevelReadException;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.io.exception.LevelWriteException;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.util.ObjectCollidability;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -82,6 +83,7 @@ public class LevelIO {
                     entry("timelineLayer", o.getTimelineLayer()),
                     entry("shape", shape),
                     entry("viewOrder", o.getViewOrder()),
+                    entry("collidability", o.getObjectCollidability().name()),
                     entry("keyFrames", jsonKeyFrames)
             );
             JSONObject jsonObj = new JSONObject(objMap);
@@ -125,10 +127,17 @@ public class LevelIO {
                     }
                     int viewOrder = jsonObj.getInt("viewOrder");
                     JSONArray jsonKeyFrames = jsonObj.getJSONArray("keyFrames");
+                    ObjectCollidability collidability;
+                    if (!jsonObj.has("collidability")) {
+                        collidability = ObjectCollidability.OPACITY_BASED;
+                    } else {
+                        collidability = ObjectCollidability.valueOf(jsonObj.getString("collidability"));
+                    }
 
                     GameObject obj = new GameObject(name, startTime, duration, timelineLayer);
                     obj.setShape(shape);
                     obj.setViewOrder(viewOrder);
+                    obj.setObjectCollidability(collidability);
                     for (Object jkf : jsonKeyFrames) {
                         if (jkf instanceof JSONObject jsonKeyFrame) {
                             int time = jsonKeyFrame.getInt("time");

@@ -467,63 +467,62 @@ public class ObjectsTimeline extends Pane {
         g.setTextBaseline(VPos.CENTER);
         for (int i = 0; i < VISIBLE_LAYERS_COUNT; i++) {
             int curLayer = visualLayersOffset.get() + i;
-            for (
-                    GameObject obj : LevelManager.getInstance()
-                        .getObjects()
-                        .stream()
-                        .filter(obj -> obj.getTimelineLayer() == curLayer)
-                        .sorted(Comparator.comparing(GameObject::getStartTime))
-                        .toList()
-            ) {
-            	int start = obj.getStartTime();
-                int end = obj.getEndTime();
-                if (end >= visualMillisOffset.get() && start <= visualMillisOffset.get() + millisPerWidth) {
-                    Color fillColor;
-                    Color strokeColor;
-                    if (obj.equals(getSelectedObject())) {
-                        fillColor = Theme.ACCENT;
-                        strokeColor = Theme.ACCENT.darker();
-                        g.setLineWidth(2.0);
-                    } else {
-                        if (hideObjects) {
-                            fillColor = Color.TRANSPARENT;
-                            strokeColor = Theme.PRIMARY.darker().deriveColor(0, 1, 1, 0.1);
-                        } else {
-                            fillColor = Theme.PRIMARY;
-                            strokeColor = Theme.PRIMARY.darker();
-                        }
-                        g.setLineWidth(1.0);
-                    }
-                    g.setFill(fillColor);
-                    g.setStroke(strokeColor);
-                    g.fillRoundRect(
-                            msToPx(start - visualMillisOffset.get()),
-                            TIMELINE_TIME_AXIS_HEIGHT + i * TIMELINE_LAYER_HEIGHT + 1,
-                            msToPx(end - start),
-                            TIMELINE_LAYER_HEIGHT - 2,
-                            5,
-                            5
-                    );
-                    g.strokeRoundRect(
-                            msToPx(start - visualMillisOffset.get()),
-                            TIMELINE_TIME_AXIS_HEIGHT + i * TIMELINE_LAYER_HEIGHT + 1,
-                            msToPx(end - start),
-                            TIMELINE_LAYER_HEIGHT - 2,
-                            5,
-                            5
-                    );
+            int layerIndex = i;
+            LevelManager.getInstance()
+                    .getObjects()
+                    .stream()
+                    .filter(obj -> obj.getTimelineLayer() == curLayer)
+                    .sorted(Comparator.comparing(GameObject::getStartTime))
+                    .forEach(obj -> {
+                        int start = obj.getStartTime();
+                        int end = obj.getEndTime();
+                        if (end >= visualMillisOffset.get() && start <= visualMillisOffset.get() + millisPerWidth) {
+                            Color fillColor;
+                            Color strokeColor;
+                            if (obj.equals(getSelectedObject())) {
+                                fillColor = Theme.ACCENT;
+                                strokeColor = Theme.ACCENT.darker();
+                                g.setLineWidth(2.0);
+                            } else {
+                                if (hideObjects) {
+                                    fillColor = Color.TRANSPARENT;
+                                    strokeColor = Theme.PRIMARY.darker().deriveColor(0, 1, 1, 0.1);
+                                } else {
+                                    fillColor = Theme.PRIMARY;
+                                    strokeColor = Theme.PRIMARY.darker();
+                                }
+                                g.setLineWidth(1.0);
+                            }
+                            g.setFill(fillColor);
+                            g.setStroke(strokeColor);
+                            g.fillRoundRect(
+                                    msToPx(start - visualMillisOffset.get()),
+                                    TIMELINE_TIME_AXIS_HEIGHT + layerIndex * TIMELINE_LAYER_HEIGHT + 1,
+                                    msToPx(end - start),
+                                    TIMELINE_LAYER_HEIGHT - 2,
+                                    5,
+                                    5
+                            );
+                            g.strokeRoundRect(
+                                    msToPx(start - visualMillisOffset.get()),
+                                    TIMELINE_TIME_AXIS_HEIGHT + layerIndex * TIMELINE_LAYER_HEIGHT + 1,
+                                    msToPx(end - start),
+                                    TIMELINE_LAYER_HEIGHT - 2,
+                                    5,
+                                    5
+                            );
 
-                    if (!hideObjects || obj.equals(getSelectedObject())) {
-                        g.setFill(Theme.BACKGROUND);
-                        g.fillText(
-                                obj.getName(),
-                                msToPx(start - visualMillisOffset.get()),
-                                TIMELINE_TIME_AXIS_HEIGHT + i * TIMELINE_LAYER_HEIGHT + TIMELINE_LAYER_HEIGHT * 0.5,
-                                msToPx(end - start)
-                        );
-                    }
-                }
-            }
+                            if (!hideObjects || obj.equals(getSelectedObject())) {
+                                g.setFill(Theme.BACKGROUND);
+                                g.fillText(
+                                        obj.getName(),
+                                        msToPx(start - visualMillisOffset.get()),
+                                        TIMELINE_TIME_AXIS_HEIGHT + layerIndex * TIMELINE_LAYER_HEIGHT + TIMELINE_LAYER_HEIGHT * 0.5,
+                                        msToPx(end - start)
+                                );
+                            }
+                        }
+                    });
         }
 
         double cursorPositionOnScreen = msToPx(getCursorPosition() - visualMillisOffset.get());

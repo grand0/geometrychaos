@@ -10,6 +10,7 @@ import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.anim.ObjectKeyFrame;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.anim.randomizer.ValueRandomizer;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.GameShape;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.GameShapeType;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.util.ObjectCollidability;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -25,6 +26,7 @@ public class GameObject extends ObjectPropertyBase<GameObject> {
     private final KeyFramesInterpolationDriver interpolationDriver;
     private final ObjectProperty<GameShape> shape;
     private final IntegerProperty viewOrder;
+    private final ObjectProperty<ObjectCollidability> objectCollidability;
 
     private final IntegerProperty time;
     private final DoubleProperty positionX;
@@ -155,6 +157,25 @@ public class GameObject extends ObjectPropertyBase<GameObject> {
             }
         };
         this.viewOrder.set(0);
+
+        this.objectCollidability = new ObjectPropertyBase<>() {
+            @Override
+            protected void invalidated() {
+                super.invalidated();
+                GameObject.this.fireValueChangedEvent();
+            }
+
+            @Override
+            public Object getBean() {
+                return null;
+            }
+
+            @Override
+            public String getName() {
+                return "objectCollidability";
+            }
+        };
+        this.objectCollidability.set(ObjectCollidability.OPACITY_BASED);
 
         this.time = new IntegerPropertyBase() {
             @Override
@@ -418,6 +439,18 @@ public class GameObject extends ObjectPropertyBase<GameObject> {
 
     public void setViewOrder(int viewOrder) {
         this.viewOrder.set(viewOrder);
+    }
+
+    public ObjectCollidability getObjectCollidability() {
+        return objectCollidability.get();
+    }
+
+    public ObjectProperty<ObjectCollidability> objectCollidabilityProperty() {
+        return objectCollidability;
+    }
+
+    public void setObjectCollidability(ObjectCollidability objectCollidability) {
+        this.objectCollidability.set(objectCollidability);
     }
 
     public int getTime() {

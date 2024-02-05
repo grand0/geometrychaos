@@ -8,17 +8,18 @@ import javafx.scene.transform.Scale;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.GameObject;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.GameShapeType;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui.Theme;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.util.ObjectCollidability;
 
 public class GameObjectShapeMaker {
 
     public static final double PIVOT_CROSS_SIZE = 7;
     public static final double SHAPE_CENTER_POINT_SIZE = 5;
+
+    public static boolean shouldMake(GameObject obj) {
+        return obj.getScaleX() != 0 && obj.getScaleY() != 0;
+    }
     
     public static Shape make(GameObject obj, Point2D centerOfScreen, double scalingFactor) {
-        if (obj.getScaleX() == 0 || obj.getScaleY() == 0) {
-            return null;
-        }
-
         double shapeSize = GameShapeType.DEFAULT_SHAPE_SIZE;
 
         ShapeMaker shapeMaker = new ShapeMaker(

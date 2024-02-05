@@ -17,6 +17,8 @@ import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.setting.Sha
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.setting.ShapeSetting;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.setting.ShapeStringSetting;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui.Theme;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.util.ObjectCollidability;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editorapp.util.converter.CollidabilityStringConverter;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.editorapp.util.converter.ShapeStringConverter;
 
 import java.util.HashMap;
@@ -29,6 +31,7 @@ public class GameObjectDetails extends Pane {
     private final Spinner<Integer> durationSpinner;
     private final ComboBox<GameShapeType> shapeComboBox;
     private final Spinner<Integer> viewOrderSpinner;
+    private final ComboBox<ObjectCollidability> objectCollidabilityComboBox;
     private final GridPane gridPane;
 
     private final ObjectProperty<GameObject> displayingObject = new ObjectPropertyBase<>() {
@@ -96,6 +99,17 @@ public class GameObjectDetails extends Pane {
             }
         });
 
+        objectCollidabilityComboBox = new ComboBox<>();
+        objectCollidabilityComboBox.setItems(FXCollections.observableArrayList(ObjectCollidability.values()));
+        objectCollidabilityComboBox.setConverter(new CollidabilityStringConverter());
+        objectCollidabilityComboBox.valueProperty().addListener(obs -> {
+            GameObject obj = displayingObject.get();
+            ObjectCollidability val = objectCollidabilityComboBox.getValue();
+            if (obj != null && !obj.getObjectCollidability().equals(val)) {
+                obj.setObjectCollidability(val);
+            }
+        });
+
         gridPane = new GridPane();
         gridPane.setVgap(10);
         gridPane.setHgap(10);
@@ -129,12 +143,14 @@ public class GameObjectDetails extends Pane {
         gridPane.addRow(1, LabelFactory.makeLabel("Start time"), startTimeSpinner);
         gridPane.addRow(2, LabelFactory.makeLabel("Duration"), durationSpinner);
         gridPane.addRow(3, LabelFactory.makeLabel("View order"), viewOrderSpinner);
-        gridPane.addRow(4, LabelFactory.makeLabel("Shape"), shapeComboBox);
+        gridPane.addRow(4, LabelFactory.makeLabel("Collidability"), objectCollidabilityComboBox);
+        gridPane.addRow(5, LabelFactory.makeLabel("Shape"), shapeComboBox);
 
         nameField.setText(obj.getName());
         startTimeSpinner.getEditor().setText(String.valueOf(obj.getStartTime()));
         durationSpinner.getEditor().setText(String.valueOf(obj.getDuration()));
         viewOrderSpinner.getEditor().setText(String.valueOf(obj.getViewOrder()));
+        objectCollidabilityComboBox.setValue(obj.getObjectCollidability());
         shapeComboBox.setValue(obj.getShape().getType());
 
         for (ShapeSetting setting : obj.getShape().getSettings()) {

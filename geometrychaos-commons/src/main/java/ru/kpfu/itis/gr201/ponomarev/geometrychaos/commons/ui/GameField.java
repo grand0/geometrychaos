@@ -18,11 +18,9 @@ import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.Player;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui.shapemaker.GameObjectShapeMaker;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui.shapemaker.PlayerShapeMaker;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class GameField extends Pane {
 
@@ -34,7 +32,7 @@ public class GameField extends Pane {
     private boolean disposed = false;
 
     private final List<Player> players;
-    private Consumer<List<Shape>> newFrameCallback;
+    private Consumer<Map<GameObject, Shape>> newFrameCallback;
 
     private final IntegerProperty time = new IntegerPropertyBase() {
         @Override
@@ -109,38 +107,32 @@ public class GameField extends Pane {
         Point2D centerOfScreen = new Point2D(getWidth() / 2.0, getHeight() / 2.0);
         double scalingFactor = (centerOfScreen.getX() * 2) / GameField.FIELD_WIDTH;
 
-        if (selectedObject.get() != null && selectedObject.get().isVisible(getTime())) {
+        if (selectedObject.get() != null && selectedObject.get().isVisible(getTime()) && GameObjectShapeMaker.shouldMake(selectedObject.get())) {
             GameObject obj = selectedObject.get();
             obj.setTime(getTime() - obj.getStartTime());
             Shape shape = GameObjectShapeMaker.make(obj, centerOfScreen, scalingFactor);
-            if (shape != null) {
-                Rectangle fieldRect = new Rectangle(0, 0, getWidth(), getHeight());
-                Shape visibleOnField = Shape.intersect(fieldRect, shape);
-                visibleOnField.setFill(null);
-                visibleOnField.setStroke(Theme.SELECTED_OBJECT_OUTLINE);
-                visibleOnField.setStrokeWidth(3.0);
-                visibleOnField.setStrokeType(StrokeType.INSIDE);
-                visibleOnField.setStrokeLineCap(StrokeLineCap.BUTT);
-                visibleOnField.getStrokeDashArray().addAll(5.0, 5.0);
-                visibleOnField.setViewOrder(-Double.MAX_VALUE);
-                Shape selectedObjectHighlight = GameObjectShapeMaker.makeSelectedObjectHighlight(shape, obj, centerOfScreen, scalingFactor);
-                getChildren().addAll(visibleOnField, selectedObjectHighlight);
-            }
+            Rectangle fieldRect = new Rectangle(0, 0, getWidth(), getHeight());
+            Shape visibleOnField = Shape.intersect(fieldRect, shape);
+            visibleOnField.setFill(null);
+            visibleOnField.setStroke(Theme.SELECTED_OBJECT_OUTLINE);
+            visibleOnField.setStrokeWidth(3.0);
+            visibleOnField.setStrokeType(StrokeType.INSIDE);
+            visibleOnField.setStrokeLineCap(StrokeLineCap.BUTT);
+            visibleOnField.getStrokeDashArray().addAll(5.0, 5.0);
+            visibleOnField.setViewOrder(-Double.MAX_VALUE);
+            Shape selectedObjectHighlight = GameObjectShapeMaker.makeSelectedObjectHighlight(shape, obj, centerOfScreen, scalingFactor);
+            getChildren().addAll(visibleOnField, selectedObjectHighlight);
         }
 
 
-        List<Shape> objectsShapes = new LinkedList<>(
-                LevelManager.getInstance()
-                        .getObjects()
-                        .stream()
-                        .filter(obj -> obj.isVisible(getTime()))
-                        .map(obj -> {
-                            obj.setTime(getTime() - obj.getStartTime());
-                            return GameObjectShapeMaker.make(obj, centerOfScreen, scalingFactor);
-                        })
-                        .filter(Objects::nonNull)
-                        .toList()
-        );
+        Map<GameObject, Shape> objectsShapes = LevelManager.getInstance()
+                .getObjects()
+                .stream()
+                .filter(obj -> obj.isVisible(getTime()) && GameObjectShapeMaker.shouldMake(obj))
+                .collect(Collectors.toMap(o -> o, obj -> {
+                    obj.setTime(getTime() - obj.getStartTime());
+                    return GameObjectShapeMaker.make(obj, centerOfScreen, scalingFactor);
+                }));
 
         List<Shape> playersShapes = new LinkedList<>(
                 players.stream()
@@ -155,7 +147,7 @@ public class GameField extends Pane {
                         .toList()
         );
 
-        getChildren().addAll(objectsShapes);
+        getChildren().addAll(objectsShapes.values());
         getChildren().addAll(playersShapes);
         getChildren().addAll(playersBackingsShapes);
 
@@ -191,11 +183,11 @@ public class GameField extends Pane {
         return players;
     }
 
-    public Consumer<List<Shape>> getNewFrameCallback() {
+    public Consumer<Map<GameObject, Shape>> getNewFrameCallback() {
         return newFrameCallback;
     }
 
-    public void setNewFrameCallback(Consumer<List<Shape>> newFrameCallback) {
+    public void setNewFrameCallback(Consumer<Map<GameObject, Shape>> newFrameCallback) {
         this.newFrameCallback = newFrameCallback;
     }
 }
