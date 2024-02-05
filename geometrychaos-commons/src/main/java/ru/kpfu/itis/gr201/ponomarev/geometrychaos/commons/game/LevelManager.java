@@ -78,6 +78,19 @@ public class LevelManager {
         }
     }
 
+    public GameObject findParent(GameObject obj) {
+        int index = obj.getName().lastIndexOf('/');
+        if (index != -1) {
+            String parentName = obj.getName().substring(0, index);
+            for (GameObject implied : objects.filtered(o -> o.isVisible(obj.getTime()))) {
+                if (implied.getName().equals(parentName)) {
+                    return implied;
+                }
+            }
+        }
+        return null;
+    }
+
     public ObservableList<GameObject> getObjects() {
         return objects.get();
     }

@@ -6,6 +6,7 @@ import javafx.scene.shape.*;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.GameObject;
+import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.LevelManager;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.game.shape.GameShapeType;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.ui.Theme;
 import ru.kpfu.itis.gr201.ponomarev.geometrychaos.commons.util.ObjectCollidability;
@@ -22,9 +23,21 @@ public class GameObjectShapeMaker {
     public static Shape make(GameObject obj, Point2D centerOfScreen, double scalingFactor) {
         double shapeSize = GameShapeType.DEFAULT_SHAPE_SIZE;
 
+        GameObject parent = LevelManager.getInstance().findParent(obj);
+        double posX = obj.getPositionX() + (parent == null ? 0 : parent.getPositionX());
+        double posY = obj.getPositionY() + (parent == null ? 0 : parent.getPositionY());
+        double highlight = obj.getHighlight() + (parent == null ? 0 : parent.getHighlight());
+        double pivotX = obj.getPivotX() + (parent == null ? 0 : parent.getPivotX());
+        double pivotY = obj.getPivotY() + (parent == null ? 0 : parent.getPivotY());
+        double viewOrder = obj.getViewOrder() + (parent == null ? 0 : parent.getViewOrder());
+        double rotation = obj.getRotation() + (parent == null ? 0 : parent.getRotation());
+        double scaleX = obj.getScaleX() * (parent == null ? 1 : parent.getScaleX());
+        double scaleY = obj.getScaleY() * (parent == null ? 1 : parent.getScaleY());
+        double stroke = obj.getStroke();
+
         ShapeMaker shapeMaker = new ShapeMaker(
-                obj.getPositionX(),
-                obj.getPositionY(),
+                posX,
+                posY,
                 shapeSize,
                 scalingFactor,
                 obj.getShape(),
@@ -32,38 +45,42 @@ public class GameObjectShapeMaker {
         );
         Shape shape = shapeMaker.make();
 
-        double shapeCenterOnScreenX = (obj.getPositionX() * scalingFactor) + centerOfScreen.getX();
-        double shapeCenterOnScreenY = (obj.getPositionY() * scalingFactor) + centerOfScreen.getY();
+        double shapeCenterOnScreenX = (posX * scalingFactor) + centerOfScreen.getX();
+        double shapeCenterOnScreenY = (posY * scalingFactor) + centerOfScreen.getY();
 
         Color shapeColor = Theme.PRIMARY;
-        if (obj.getHighlight() > 0.0) { // make brighter
-            shapeColor = shapeColor.interpolate(Color.WHITE, obj.getHighlight());
-        } else if (obj.getHighlight() < 0.0) { // make transparent
-            shape.setOpacity(1.0 + obj.getHighlight());
+        if (highlight > 0.0) { // make brighter
+            shapeColor = shapeColor.interpolate(Color.WHITE, highlight);
+        } else if (highlight < 0.0) { // make transparent
+            shape.setOpacity(1.0 + highlight);
         }
-        double scaledPivotX = obj.getPivotX() * scalingFactor;
-        double scaledPivotY = obj.getPivotY() * scalingFactor;
-        if (obj.getStroke() <= 0.0) {
+        double scaledPivotX = pivotX * scalingFactor;
+        double scaledPivotY = pivotY * scalingFactor;
+        if (stroke <= 0.0) {
             shape.setFill(shapeColor);
         } else {
-            shape.setStrokeWidth(obj.getStroke() * scalingFactor);
+            shape.setStrokeWidth(stroke * scalingFactor);
             shape.setStrokeType(StrokeType.INSIDE);
             shape.setStroke(shapeColor);
             shape.setFill(null);
         }
-        shape.setViewOrder(obj.getViewOrder());
+        shape.setViewOrder(viewOrder);
         shape.getTransforms().addAll(
-                new Rotate(obj.getRotation(), shapeCenterOnScreenX + scaledPivotX, shapeCenterOnScreenY + scaledPivotY),
-                new Scale(obj.getScaleX(), obj.getScaleY(), shapeCenterOnScreenX + scaledPivotX, shapeCenterOnScreenY + scaledPivotY)
+                new Rotate(rotation, shapeCenterOnScreenX + scaledPivotX, shapeCenterOnScreenY + scaledPivotY),
+                new Scale(scaleX, scaleY, shapeCenterOnScreenX + scaledPivotX, shapeCenterOnScreenY + scaledPivotY)
         );
         return shape;
     }
 
     public static Shape makeSelectedObjectHighlight(Shape shape, GameObject obj, Point2D centerOfScreen, double scalingFactor) {
-        double objCenterOnScreenBeforeTransformX = (obj.getPositionX() * scalingFactor) + centerOfScreen.getX();
-        double objCenterOnScreenBeforeTransformY = (obj.getPositionY() * scalingFactor) + centerOfScreen.getY();
-        double pivotX = objCenterOnScreenBeforeTransformX + obj.getPivotX() * scalingFactor;
-        double pivotY = objCenterOnScreenBeforeTransformY + obj.getPivotY() * scalingFactor;
+        GameObject parent = LevelManager.getInstance().findParent(obj);
+        double posX = obj.getPositionX() + (parent == null ? 0 : parent.getPositionX());
+        double posY = obj.getPositionY() + (parent == null ? 0 : parent.getPositionY());
+
+        double objCenterOnScreenBeforeTransformX = (posX * scalingFactor) + centerOfScreen.getX();
+        double objCenterOnScreenBeforeTransformY = (posY * scalingFactor) + centerOfScreen.getY();
+        double pivotX = objCenterOnScreenBeforeTransformX + (obj.getPivotX() + (parent == null ? 0 : parent.getPivotX())) * scalingFactor;
+        double pivotY = objCenterOnScreenBeforeTransformY + (obj.getPivotY() + (parent == null ? 0 : parent.getPivotY())) * scalingFactor;
         Point2D actualShapeCenterOnScreen = shape.getLocalToParentTransform().transform(objCenterOnScreenBeforeTransformX, objCenterOnScreenBeforeTransformY);
         Line vCross = new Line(
                 pivotX,
